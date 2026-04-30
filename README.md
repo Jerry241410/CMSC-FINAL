@@ -17,7 +17,9 @@ This project is a Tkinter desktop prototype for interruption-aware AI writing. I
   - describe the kind of revision they want
   - write their own replacement text
 - The selected revision is applied back into the live document.
-- The inferred preference is added to the user's saved profile.
+- Standardized option selections apply immediately as local passage memory.
+- Repeated similar selections are promoted into the saved profile after they recur three times.
+- Custom user input is interpreted as either a one-time local fix or a reusable global preference.
 
 ### Current UI
 
@@ -63,7 +65,7 @@ The app currently has four main agent roles:
 - `BehaviorInterpreterAgent`: handles the `Other` path when the user provides custom revision behavior
 - `ReplacementAgent`: generates local replacement options or a custom revision
 
-There is also a simple `PreferenceMemoryAgent` that deduplicates and appends concise preference summaries.
+There is also a `PreferenceMemoryAgent` that tracks local memory, counts repeated similar choices, and promotes durable preferences into the profile.
 
 ### Revision memory and export
 
@@ -75,6 +77,7 @@ The app stores revision events containing:
 - selected revision
 - custom input when used
 - updated preference profile
+- local preference memory applied at the time of revision
 
 `Export Session JSON` currently shows a JSON snapshot in a popup window.
 
@@ -98,9 +101,10 @@ Interruption handling is still fairly heuristic:
 
 ### Option quality control
 
-- one option is generated per reason
-- options are shown in returned order
-- there is no scoring pass
+- replacement generation is standardized into 10 recurring slots
+- 5 options are language-level choices
+- 5 options are content-level choices
+- the wording and replacement text still adapt to the current interruption context
 
 ### Export and reporting polish
 
@@ -122,7 +126,7 @@ The architecture is in place, but it still needs more runtime verification:
 4. Stop when the current sentence feels wrong.
 5. Review interpreter output and rewrite options.
 6. Apply a generated option or use `Other`.
-7. Continue generation with the updated text and saved profile.
+7. Continue generation with the updated text, local passage memory, and saved profile.
 
 ## Requirements
 
@@ -163,4 +167,20 @@ export OPENAI_API_KEY="your_key_here"
 
 ```bash
 python writing.py
+```
+
+## Headless Simulation
+
+Run the fake-profile batch simulation:
+
+```bash
+python run_fake_profile_simulation.py --count 100 --max-steps 6
+```
+
+This writes a raw simulation JSON file under `simulation_outputs/`.
+
+Export flattened interruption logs plus a blank report scaffold from that raw file:
+
+```bash
+python export_simulation_report.py simulation_outputs/your_run.json
 ```

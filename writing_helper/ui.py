@@ -190,7 +190,9 @@ class WritingHelperApp:
         self._clear_replacement_options()
         first_selectable_option = ""
         for option in options:
-            title = f"{option['reason_id']} - {option['reason']}"
+            category = option.get("category", "").strip()
+            category_prefix = f"[{category.title()}] " if category else ""
+            title = f"{category_prefix}{option['reason_id']} - {option['reason']}"
             if len(title) > 120:
                 title = title[:117] + "..."
             explanation = option["explanation"]
@@ -248,7 +250,7 @@ class WritingHelperApp:
                     self._append_log("[ReplacementHelper] Options updated.\n")
                 elif event_type == "profile_update":
                     self.profile_text.delete("1.0", "end")
-                    self.profile_text.insert("1.0", "\n".join(payload))
+                    self.profile_text.insert("1.0", self._format_profile_payload(payload))
                 elif event_type == "accepted_text":
                     self._append_log("[Accepted Baseline Updated]\n")
                 elif event_type == "revision_applied":
@@ -301,5 +303,39 @@ class WritingHelperApp:
         if goal:
             lines.append("")
             lines.append(f"Replacement goal: {goal}")
+
+        return "\n".join(lines)
+
+    def _format_profile_payload(self, payload: Any) -> str:
+        if isinstance(payload, list):
+            return "\n".join(payload)
+
+        if not isinstance(payload, dict):
+            return str(payload)
+
+        lines: List[str] = []
+        global_profile = payload.get("global_profile", [])
+        local_profile = payload.get("local_profile", [])
+        observations = payload.get("observations", [])
+
+        lines.append("Global profile:")
+        if global_profile:
+            lines.extend(f"- {item}" for item in global_profile)
+        else:
+            lines.append("- None yet.")
+
+        lines.append("")
+        lines.append("Local passage memory:")
+        if local_profile:
+            lines.extend(f"- {item}" for item in local_profile)
+        else:
+            lines.append("- None yet.")
+
+        lines.append("")
+        lines.append("Preference counts:")
+        if observations:
+            lines.extend(f"- {item.get('summary', '')} ({item.get('count', 0)}x)" for item in observations)
+        else:
+            lines.append("- None yet.")
 
         return "\n".join(lines)

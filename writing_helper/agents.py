@@ -9,6 +9,7 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from .constants import (
     MAX_REPLACEMENT_WORDS,
     MAX_REASON_OPTIONS,
+    PREFERENCE_PROMOTION_THRESHOLD,
     PROFILE_MEMORY_TEMPERATURE,
     REPLACEMENT_TEMPERATURE,
     STREAM_TOKEN_DELAY_SECONDS,
@@ -18,6 +19,7 @@ from .constants import (
 from .models import (
     InterpreterReasonCandidate,
     InterpreterResult,
+    PreferenceObservation,
     ProfileUpdateSuggestion,
     ReplacementGuidance,
     ReplacementOption,
@@ -57,17 +59,15 @@ class StatelessLLMAgent(BaseLocalAgent):
         await self.model_client.close()
 
 
-class PreferenceMemoryAgent(BaseLocalAgent):
+class PreferenceMemoryAgent(StatelessLLMAgent):
     def __init__(self, model: str = "gpt-4o-mini", name: str = "preference_memory_agent"):
-        super().__init__(name)
-        self.model_client = OpenAIChatCompletionClient(model=model, temperature=PROFILE_MEMORY_TEMPERATURE)
-        self.agent = AssistantAgent(
+        super().__init__(
             name=name,
-            model_client=self.model_client,
-            model_client_stream=True,
+            model=model,
+            temperature=PROFILE_MEMORY_TEMPERATURE,
             system_message=(
-                "You write short reusable user writing preferences from revision choices. "
-                "Return only one concise preference sentence."
+                "You analyze user writing preferences from revision behavior. "
+                "Return plain text or JSON exactly as requested."
             ),
         )
 
@@ -76,6 +76,85 @@ class PreferenceMemoryAgent(BaseLocalAgent):
         if not cleaned:
             return list(existing_profile)
         return list(dict.fromkeys(existing_profile + [cleaned]))
+
+    def update_local_hints(self, existing_hints: List[str], summary: str) -> List[str]:
+        cleaned = summary.strip()
+        if not cleaned:
+            return list(existing_hints)
+        return list(dict.fromkeys(existing_hints + [cleaned]))
+
+    def record_observation(
+        self,
+        existing_observations: List[PreferenceObservation],
+        key: str,
+        summary: str,
+    ) -> tuple[List[PreferenceObservation], int]:
+        cleaned_key = key.strip()
+        cleaned_summary = summary.strip()
+        if not cleaned_key or not cleaned_summary:
+            return list(existing_observations), 0
+
+        updated: List[PreferenceObservation] = []
+        matched = False
+        count_after = 1
+        for item in existing_observations:
+            if item.key == cleaned_key:
+                count_after = item.count + 1
+                updated.append(PreferenceObservation(key=cleaned_key, summary=cleaned_summary, count=count_after))
+                matched = True
+            else:
+                updated.append(item)
+        if not matched:
+            updated.append(PreferenceObservation(key=cleaned_key, summary=cleaned_summary, count=1))
+        return updated, count_after
+
+    def should_promote(self, count: int) -> bool:
+        return count >= PREFERENCE_PROMOTION_THRESHOLD
+
+    def summarize_standard_reason(self, reason_id: str, reason_text: str) -> tuple[str, str]:
+        mapping = {
+            "LANG_REPETITION": (
+                "language_avoid_repetition",
+                "Avoid repetition and let each sentence make a fresh move.",
+            ),
+            "LANG_TOO_GENERAL": (
+                "language_more_specific_wording",
+                "Use more specific wording instead of broad or generic phrasing.",
+            ),
+            "LANG_TOO_SPECIFIC": (
+                "language_keep_flexible_wording",
+                "Keep wording flexible enough to avoid sounding overly narrow too early.",
+            ),
+            "LANG_TONE": (
+                "language_tone_alignment",
+                "Keep the tone aligned with the intended voice of the piece.",
+            ),
+            "LANG_CONCISE": (
+                "language_concise_clarity",
+                "Prefer clearer, lighter, and more concise sentences.",
+            ),
+            "CONTENT_EXAMPLE": (
+                "content_need_example",
+                "Support abstract points with concrete examples when needed.",
+            ),
+            "CONTENT_REFINED": (
+                "content_refine_claim",
+                "State the core claim more precisely and with a more refined point.",
+            ),
+            "CONTENT_OPPOSITE": (
+                "content_include_counterpoint",
+                "Use a brief opposing idea or contrast when it strengthens the point.",
+            ),
+            "CONTENT_MECHANISM": (
+                "content_explain_mechanism",
+                "Explain the mechanism or reasoning behind important claims.",
+            ),
+            "CONTENT_TRANSITION": (
+                "content_stronger_transition",
+                "Make each sentence connect more explicitly to the prior idea and task.",
+            ),
+        }
+        return mapping.get(reason_id, (reason_id.lower() or "local_preference", self._fallback_summary(reason_text)))
 
     async def summarize_choice(
         self,
@@ -112,38 +191,106 @@ Constraints:
 - Return plain text only.
 """
         try:
-            parts: List[str] = []
-            async for item in self.agent.run_stream(task=prompt):
-                text = getattr(item, "content", None)
-                if isinstance(text, str) and text:
-                    parts.append(text)
-            summary = " ".join("".join(parts).split()).strip()
+            summary = " ".join((await self.complete(prompt)).split()).strip()
             return summary.strip("\"' ")
         except Exception:
             return self._fallback_summary(selected_reason)
 
-    async def close(self) -> None:
-        await self.model_client.close()
+    async def interpret_custom_memory(
+        self,
+        task: str,
+        passage: str,
+        current_sentence: str,
+        user_input: str,
+        existing_profile: List[str],
+    ) -> ProfileUpdateSuggestion:
+        preferences = "\n".join(f"- {item}" for item in existing_profile) or "- None yet."
+        prompt = f"""
+Interpret whether this user-provided revision instruction should be treated as a local one-time fix or a durable profile preference.
+
+Task:
+{task}
+
+Current passage:
+{passage}
+
+Current interrupted sentence:
+{current_sentence}
+
+User instruction:
+{user_input}
+
+Existing user profile:
+{preferences}
+
+Return JSON only with this structure:
+{{
+  "preference_summary": "<concise preference summary>",
+  "confidence": 0.0,
+  "preference_key": "<short snake_case key>",
+  "scope": "<local|global>",
+  "rationale": "<brief reason for the scope choice>"
+}}
+
+Constraints:
+- Use "global" only when the instruction clearly sounds reusable across passages.
+- Use "local" for one-time content fixes tied to this passage.
+- Keep preference_summary under 18 words.
+- Keep preference_key short and reusable.
+"""
+        try:
+            payload = extract_json_object(await self.complete(prompt))
+            return ProfileUpdateSuggestion(
+                preference_summary=str(payload.get("preference_summary", "")).strip(),
+                confidence=float(payload.get("confidence", 0.0) or 0.0),
+                preference_key=str(payload.get("preference_key", "")).strip() or self._to_preference_key(user_input),
+                scope=str(payload.get("scope", "local")).strip().lower() or "local",
+                rationale=str(payload.get("rationale", "")).strip(),
+            )
+        except Exception:
+            summary = self._fallback_summary(user_input)
+            return ProfileUpdateSuggestion(
+                preference_summary=summary,
+                confidence=0.45,
+                preference_key=self._to_preference_key(summary),
+                scope="global" if self._looks_global(user_input) else "local",
+                rationale="Fallback heuristic based on whether the custom instruction sounds reusable.",
+            )
 
     def _fallback_summary(self, selected_reason: str) -> str:
         lowered = selected_reason.lower()
-        if any(word in lowered for word in ["generic", "concrete", "detail"]):
-            return "Prefers concrete writing with sharper detail."
+        if any(word in lowered for word in ["generic", "general", "specific wording"]):
+            return "Use more specific wording instead of generic phrasing."
         if any(word in lowered for word in ["specific", "narrow", "overcommit"]):
-            return "Prefers ideas that stay flexible before narrowing."
-        if any(word in lowered for word in ["example", "evidence", "support"]):
-            return "Prefers claims supported by examples or evidence."
-        if any(word in lowered for word in ["thoughtful", "insight", "developed"]):
-            return "Prefers more thoughtful and developed points."
+            return "Keep wording flexible before narrowing the point."
+        if any(word in lowered for word in ["example", "illustrat", "evidence", "support"]):
+            return "Support claims with examples or concrete illustration."
         if any(word in lowered for word in ["repeat", "redund", "duplicate"]):
-            return "Dislikes repetition and redundant phrasing."
+            return "Avoid repetition and redundant phrasing."
         if any(word in lowered for word in ["tone", "voice", "formal", "stiff"]):
-            return "Prefers a tone that matches the intended voice."
-        if any(word in lowered for word in ["long", "dense", "unclear"]):
-            return "Prefers clear sentences with lighter density."
+            return "Keep the tone aligned with the intended voice."
+        if any(word in lowered for word in ["long", "dense", "unclear", "concise"]):
+            return "Prefer clearer and more concise sentences."
+        if any(word in lowered for word in ["opposite", "counter", "contrast"]):
+            return "Use a contrast or counterpoint when it sharpens the argument."
+        if any(word in lowered for word in ["mechanism", "intuition", "why", "reasoning"]):
+            return "Explain why the claim holds, not just what it says."
         if any(word in lowered for word in ["transition", "align", "task"]):
-            return "Prefers smoother transitions and tighter task alignment."
+            return "Make transitions tighter and more task-aligned."
+        if any(word in lowered for word in ["refined", "precise", "claim"]):
+            return "State the core claim more precisely."
         return selected_reason.strip()
+
+    def _looks_global(self, user_input: str) -> bool:
+        lowered = user_input.lower()
+        global_markers = ["prefer", "always", "usually", "tone", "voice", "style", "concise", "specific", "example"]
+        return any(marker in lowered for marker in global_markers)
+
+    def _to_preference_key(self, text: str) -> str:
+        cleaned = "".join(ch.lower() if ch.isalnum() else "_" for ch in text).strip("_")
+        while "__" in cleaned:
+            cleaned = cleaned.replace("__", "_")
+        return cleaned[:48] or "custom_preference"
 
 
 class InterruptionInterpreterAgent(StatelessLLMAgent):
@@ -160,6 +307,7 @@ class InterruptionInterpreterAgent(StatelessLLMAgent):
     async def interpret(self, state: SessionState) -> InterpreterResult:
         context = state.interruption_context
         preferences = "\n".join(f"- {item}" for item in state.preference_profile) or "- None yet."
+        local_preferences = "\n".join(f"- {item}" for item in state.local_preference_hints) or "- None yet."
         prompt = f"""
 Interpret this writing interruption and return exactly the requested JSON structure with no extra keys.
 
@@ -168,6 +316,9 @@ User task description:
 
 Existing user profile:
 {preferences}
+
+Current local passage preferences:
+{local_preferences}
 
 Stop point information:
 {{
@@ -186,12 +337,8 @@ Return exactly this structure:
   "likely_user_intent": "<general description of what the user probably wants>",
   "reason_candidates": [
     {{
-      "id": "R1",
-      "reason": "<detailed possible reason>"
-    }},
-    {{
-      "id": "R2",
-      "reason": "<detailed possible reason>"
+      "id": "LANG_REPETITION",
+      "reason": "<language reason>"
     }}
   ],
   "replacement_guidance": {{
@@ -201,49 +348,47 @@ Return exactly this structure:
   }},
   "profile_update": {{
     "preference_summary": "<possible user preference inferred from this interruption>",
-    "confidence": 0.0
+    "confidence": 0.0,
+    "preference_key": "<short snake_case key>",
+    "scope": "<local|global>",
+    "rationale": "<brief reason>"
   }}
 }}
 
 Constraints:
-- Use the interrupted sentence, the previous sentence, the task, and the saved user profile as evidence.
+- Use the interrupted sentence, the previous sentence, the task, the saved user profile, and current local preferences as evidence.
 - Return exactly {TARGET_REASON_OPTIONS} reason candidates.
-- Make the five reasons meaningfully different from one another.
-- Prefer content-related critiques when they are supported by the stop point.
-- Keep style and voice critiques available, but do not let them crowd out content critiques.
-- The reasons may include issues such as:
-- too generic
-- too specific or too narrow
-- weak or missing example
-- not thoughtful enough
-- repetitive or redundant
-- weak contribution claim
-- unclear mechanism or intuition
-- unsupported or under-qualified claim
-- tone or voice mismatch
-- too long, dense, or unclear
-- weak transition or weak task alignment
-- Use at most {MAX_REASON_OPTIONS} reason candidates.
-- Keep reason candidates detailed enough to guide rewriting.
+- Standardize the reasons into exactly these 10 choices in this order:
+  1. LANG_REPETITION
+  2. LANG_TOO_GENERAL
+  3. LANG_TOO_SPECIFIC
+  4. LANG_TONE
+  5. LANG_CONCISE
+  6. CONTENT_EXAMPLE
+  7. CONTENT_REFINED
+  8. CONTENT_OPPOSITE
+  9. CONTENT_MECHANISM
+  10. CONTENT_TRANSITION
+- Keep the first five language-level and the last five content-level.
 - Make each reason specific to this stop point instead of generic writing advice.
 - Do not include any keys beyond the required structure.
 - Return JSON only.
 """
         try:
-            return self._parse_result(extract_json_object(await self.complete(prompt)))
+            return self._parse_result(extract_json_object(await self.complete(prompt)), state)
         except Exception:
             return self._fallback_interpretation(state)
 
-    def _parse_result(self, payload: dict) -> InterpreterResult:
+    def _parse_result(self, payload: dict, state: SessionState) -> InterpreterResult:
         stop_point = payload.get("stop_point", {})
         reasons = payload.get("reason_candidates", [])[:MAX_REASON_OPTIONS]
         parsed_reasons = [
             InterpreterReasonCandidate(
-                id=str(item.get("id", f"R{index + 1}")).strip() or f"R{index + 1}",
+                id=str(item.get("id", "")).strip(),
                 reason=str(item.get("reason", "")).strip(),
             )
-            for index, item in enumerate(reasons)
-            if str(item.get("reason", "")).strip()
+            for item in reasons
+            if str(item.get("id", "")).strip() and str(item.get("reason", "")).strip()
         ]
         parsed_reasons = self._ensure_target_reason_candidates(parsed_reasons, state)
         guidance = payload.get("replacement_guidance", {})
@@ -264,6 +409,9 @@ Constraints:
             profile_update=ProfileUpdateSuggestion(
                 preference_summary=str(profile_update.get("preference_summary", "")).strip(),
                 confidence=float(profile_update.get("confidence", 0.0) or 0.0),
+                preference_key=str(profile_update.get("preference_key", "")).strip(),
+                scope=str(profile_update.get("scope", "local")).strip().lower() or "local",
+                rationale=str(profile_update.get("rationale", "")).strip(),
             ),
         )
 
@@ -274,23 +422,17 @@ Constraints:
     ) -> List[InterpreterReasonCandidate]:
         templates = self._reason_templates(state)
         reasons: List[InterpreterReasonCandidate] = []
-        used_reason_texts: set[str] = set()
 
-        for index, template in enumerate(templates, start=1):
+        for template in templates:
             matched_reason = next(
                 (
                     candidate.reason.strip()
                     for candidate in parsed_reasons
-                    if candidate.reason.strip() and template["match"](candidate.reason.strip().lower())
+                    if candidate.id == template["id"] and candidate.reason.strip()
                 ),
                 "",
             )
-            chosen_reason = matched_reason or template["text"]
-            normalized = chosen_reason.lower()
-            if normalized in used_reason_texts:
-                continue
-            reasons.append(InterpreterReasonCandidate(id=f"R{len(reasons) + 1}", reason=chosen_reason))
-            used_reason_texts.add(normalized)
+            reasons.append(InterpreterReasonCandidate(id=template["id"], reason=matched_reason or template["text"]))
             if len(reasons) >= TARGET_REASON_OPTIONS:
                 break
 
@@ -298,8 +440,8 @@ Constraints:
 
     def _fallback_interpretation(self, state: SessionState) -> InterpreterResult:
         reasons = [
-            InterpreterReasonCandidate(id=f"R{index}", reason=template["text"])
-            for index, template in enumerate(self._reason_templates(state), start=1)
+            InterpreterReasonCandidate(id=template["id"], reason=template["text"])
+            for template in self._reason_templates(state)
         ]
 
         return InterpreterResult(
@@ -321,6 +463,9 @@ Constraints:
             profile_update=ProfileUpdateSuggestion(
                 preference_summary="Prefer sentence rewrites that stay tightly aligned with the task and feel more intentional.",
                 confidence=0.45,
+                preference_key="task_aligned_sentence_rewrites",
+                scope="local",
+                rationale="Fallback interpretation keeps the preference local until repeated.",
             ),
         )
 
@@ -332,81 +477,74 @@ Constraints:
 
         return [
             {
+                "id": "LANG_REPETITION",
                 "text": (
-                    f"The sentence may be too generic for {task}; based on '{current_sentence}', it may need more "
-                    f"concrete detail, examples, or sharper wording."
+                    f"Language: '{current_sentence}' may repeat what '{last_sentence}' already established, "
+                    f"so the next sentence should make a fresher move."
                 ),
-                "match": lambda reason: "generic" in reason or "concrete" in reason or "detail" in reason,
             },
             {
+                "id": "LANG_TOO_GENERAL",
                 "text": (
-                    f"The sentence may be too specific or too narrow too early, which could overcommit the draft "
-                    f"in a way that limits how the writing can develop for {task}."
+                    f"Language: the wording in '{current_sentence}' may be too general for {task}, so it may need "
+                    f"sharper diction or more specific phrasing."
                 ),
-                "match": lambda reason: "specific" in reason or "narrow" in reason or "overcommit" in reason,
             },
             {
+                "id": "LANG_TOO_SPECIFIC",
                 "text": (
-                    f"The sentence may need a stronger example or supporting detail; at this stop point, the writing "
-                    f"may gesture at an idea without grounding it enough for {task}."
+                    f"Language: the sentence may sound too specific or overcommitted too early, which could make the "
+                    f"draft less flexible as it develops for {task}."
                 ),
-                "match": lambda reason: "example" in reason or "support" in reason or "evidence" in reason,
             },
             {
+                "id": "LANG_TONE",
                 "text": (
-                    f"The point in '{current_sentence}' may not feel thoughtful or developed enough yet, so the user "
-                    f"may want a more substantial claim or insight."
+                    f"Language: the tone or voice in '{current_sentence}' may not match the user's preferred style "
+                    f"suggested by {profile}."
                 ),
-                "match": lambda reason: "thoughtful" in reason or "developed" in reason or "insight" in reason,
             },
             {
+                "id": "LANG_CONCISE",
                 "text": (
-                    f"The sentence may repeat information that is already implied by '{last_sentence}', so it may need "
-                    f"less redundancy and a fresher next move."
+                    f"Language: the sentence may be too long, dense, or clunky at this stop point, so it may need "
+                    f"cleaner and more concise wording."
                 ),
-                "match": lambda reason: "repeat" in reason or "redund" in reason or "duplicate" in reason,
             },
             {
+                "id": "CONTENT_EXAMPLE",
                 "text": (
-                    f"The contribution claim in '{current_sentence}' may not yet feel strong or distinct enough, so "
-                    f"the user may want a clearer statement of what is new or important."
+                    f"Content: the idea at this stop point may need an example or concrete illustration to make the "
+                    f"point land for {task}."
                 ),
-                "match": lambda reason: "contribution" in reason or "novel" in reason or "new" in reason or "important" in reason,
             },
             {
+                "id": "CONTENT_REFINED",
                 "text": (
-                    f"The sentence may point toward a result without making the mechanism or intuition clear enough, "
-                    f"so the reader may not yet see why the claim should hold."
+                    f"Content: the claim in '{current_sentence}' may need a more refined, tighter, or more precise "
+                    f"statement of the actual point."
                 ),
-                "match": lambda reason: "mechanism" in reason or "intuition" in reason or "why" in reason or "explain" in reason,
             },
             {
+                "id": "CONTENT_OPPOSITE",
                 "text": (
-                    f"The claim in '{current_sentence}' may feel under-supported or insufficiently qualified, so the "
-                    f"user may want stronger evidence, framing, or caveats."
+                    f"Content: the draft may benefit from briefly showing an opposite idea, counterpressure, or contrast "
+                    f"to better defend the point being made."
                 ),
-                "match": lambda reason: "under-supported" in reason or "unsupported" in reason or "qualified" in reason or "caveat" in reason,
             },
             {
+                "id": "CONTENT_MECHANISM",
                 "text": (
-                    f"The sentence may not match the user's preferred tone or voice suggested by {profile}; "
-                    f"the wording at '{current_sentence}' may sound off-style."
+                    f"Content: the sentence may point toward a claim without making the mechanism, intuition, or reasoning "
+                    f"clear enough for the reader."
                 ),
-                "match": lambda reason: "tone" in reason or "voice" in reason or "formal" in reason or "stiff" in reason,
             },
             {
+                "id": "CONTENT_TRANSITION",
                 "text": (
-                    f"The sentence may be too long, dense, or unclear at the stop point, making it harder to process "
-                    f"quickly during streaming."
+                    f"Content: the sentence may transition weakly from '{last_sentence}' or may not align tightly enough "
+                    f"with the immediate purpose of {task}."
                 ),
-                "match": lambda reason: "long" in reason or "dense" in reason or "clear" in reason or "unclear" in reason,
-            },
-            {
-                "text": (
-                    f"The sentence may transition weakly from '{last_sentence}' or may not align tightly enough "
-                    f"with the task '{task}'."
-                ),
-                "match": lambda reason: "transition" in reason or "align" in reason or "task" in reason or "intent" in reason,
             },
         ]
 
@@ -431,6 +569,7 @@ class BehaviorInterpreterAgent(InterruptionInterpreterAgent):
     ) -> InterpreterResult:
         context = state.interruption_context
         preferences = "\n".join(f"- {item}" for item in state.preference_profile) or "- None yet."
+        local_preferences = "\n".join(f"- {item}" for item in state.local_preference_hints) or "- None yet."
         prompt = f"""
 Interpret this user behavior and return exactly the requested JSON structure with no extra keys.
 
@@ -442,6 +581,9 @@ User task description:
 
 Existing user profile:
 {preferences}
+
+Current local passage preferences:
+{local_preferences}
 
 Stop point information:
 {{
@@ -465,10 +607,6 @@ Return exactly this structure:
     {{
       "id": "R1",
       "reason": "<detailed possible reason>"
-    }},
-    {{
-      "id": "R2",
-      "reason": "<detailed possible reason>"
     }}
   ],
   "replacement_guidance": {{
@@ -478,14 +616,17 @@ Return exactly this structure:
   }},
   "profile_update": {{
     "preference_summary": "<possible user preference inferred from this interruption>",
-    "confidence": 0.0
+    "confidence": 0.0,
+    "preference_key": "<short snake_case key>",
+    "scope": "<local|global>",
+    "rationale": "<brief reason>"
   }}
 }}
 
 Return JSON only.
 """
         try:
-            return self._parse_result(extract_json_object(await self.complete(prompt)))
+            return self._parse_result(extract_json_object(await self.complete(prompt)), state)
         except Exception:
             return InterpreterResult(
                 stop_point=state.interruption_context,
@@ -502,6 +643,9 @@ Return JSON only.
                 profile_update=ProfileUpdateSuggestion(
                     preference_summary=f"User often prefers: {behavior_text.strip()}",
                     confidence=0.6,
+                    preference_key="custom_behavior_preference",
+                    scope="global" if "prefer" in behavior_text.lower() else "local",
+                    rationale="Fallback behavior uses a simple reusable-language heuristic.",
                 ),
             )
 
@@ -523,6 +667,7 @@ class ReplacementAgent(StatelessLLMAgent):
         state: SessionState,
         interpreter_result: InterpreterResult,
     ) -> List[ReplacementOption]:
+        local_preferences = "\n".join(f"- {item}" for item in state.local_preference_hints) or "- None yet."
         prompt = f"""
 Generate one replacement option for each reason candidate.
 
@@ -532,6 +677,9 @@ User task:
 Sentence to revise:
 {state.interruption_context.current_sentence}
 
+Current local passage preferences:
+{local_preferences}
+
 Interpreter result:
 {json.dumps(interpreter_result.to_dict(), ensure_ascii=False, indent=2)}
 
@@ -539,7 +687,7 @@ Return JSON with this structure:
 {{
   "options": [
     {{
-      "reason_id": "R1",
+      "reason_id": "LANG_REPETITION",
       "reason": "<copy of the reason>",
       "explanation": "<why this option fits>",
       "replacement_text": "<replacement sentence>"
@@ -554,6 +702,7 @@ Constraints:
 - Rewrite only the interrupted sentence or immediate local span.
 - Do not copy the full task description, bullet lists, or prompt text into the replacement.
 - Each replacement_text must be short: at most two sentences and preferably under {MAX_REPLACEMENT_WORDS} words.
+- Respect the current local passage preferences when they help.
 
 Return JSON only.
 """
@@ -577,6 +726,7 @@ Return JSON only.
                             reason=reason_map[reason_id],
                             explanation=str(item.get("explanation", "")).strip() or reason_map[reason_id],
                             replacement_text=replacement_text,
+                            category="language" if reason_id.startswith("LANG_") else "content",
                         )
                     )
             if options:
@@ -623,6 +773,7 @@ Return only the replacement sentence or short local revision.
                     reason=reason.reason,
                     explanation=reason.reason,
                     replacement_text=self._fallback_rewrite_for_reason(state, reason.id),
+                    category="language" if reason.id.startswith("LANG_") else "content",
                 )
             )
         return self._ensure_target_replacements(options, state, interpreter_result)
@@ -646,6 +797,7 @@ Return only the replacement sentence or short local revision.
                     reason=reason.reason,
                     explanation=reason.reason,
                     replacement_text=self._fallback_rewrite_for_reason(state, reason.id),
+                    category="language" if reason.id.startswith("LANG_") else "content",
                 )
             )
             covered_reason_ids.add(reason.id)
@@ -663,25 +815,29 @@ Return only the replacement sentence or short local revision.
         if not compact:
             return "Continue with a clearer sentence that fits the task."
 
-        if reason_id == "R1":
-            return f"{compact}, with a more concrete detail tied directly to {task}."
-        if reason_id == "R2":
-            return f"{compact}, but framed a bit more broadly so it does not lock the draft in too early."
-        if reason_id == "R3":
-            return f"{compact}, with a stronger supporting example or clearer evidence."
-        if reason_id == "R4":
-            return f"{compact}, with a more thoughtful and developed point."
-        if reason_id == "R5":
-            return f"{compact}, without repeating what has already been said."
-        if reason_id == "R6":
-            return f"{compact}, expressed in a more natural and user-aligned voice."
-        if reason_id == "R7":
+        if reason_id == "LANG_REPETITION":
+            return f"{compact}, but with a fresher move instead of repeating the previous point."
+        if reason_id == "LANG_TOO_GENERAL":
+            return f"{compact}, stated with more specific and concrete wording."
+        if reason_id == "LANG_TOO_SPECIFIC":
+            return f"{compact}, but phrased a bit more broadly so the draft stays flexible."
+        if reason_id == "LANG_TONE":
+            return f"{compact}, expressed in a tone that feels more natural for the piece."
+        if reason_id == "LANG_CONCISE":
             first_clause = compact.split(",")[0].strip()
             return f"{first_clause}."
-        if reason_id == "R8":
+        if reason_id == "CONTENT_EXAMPLE":
+            return f"{compact}, illustrated with a concrete example."
+        if reason_id == "CONTENT_REFINED":
+            return f"{compact}, recast as a more precise and refined point."
+        if reason_id == "CONTENT_OPPOSITE":
+            return f"{compact}, while acknowledging the opposing pressure that makes the point more convincing."
+        if reason_id == "CONTENT_MECHANISM":
+            return f"{compact}, with a clearer explanation of why the claim holds."
+        if reason_id == "CONTENT_TRANSITION":
             prefix = "Building on that point, " if previous_sentence else "From there, "
             return f"{prefix}{compact[:1].lower() + compact[1:] if len(compact) > 1 else compact.lower()}."
-        return f"{compact}, revised to better fit the user's intent."
+        return f"{compact}, revised to better fit {task}."
 
     def _sanitize_replacement_text(self, replacement_text: str, state: SessionState, reason_id: str) -> str:
         normalized = " ".join(replacement_text.split()).strip()
@@ -715,7 +871,7 @@ class StreamingWriterAgent(StatelessLLMAgent):
             temperature=STREAMING_TEMPERATURE,
             system_message=(
                 "You are the main writing generator in an interruption-aware writing system. "
-                "Generate streaming prose that follows the user's task and saved profile. "
+                "Generate streaming prose that follows the user's task, profile, and current local passage preferences. "
                 "Do not explain your process."
             ),
         )
@@ -741,6 +897,7 @@ class StreamingWriterAgent(StatelessLLMAgent):
 
     def _build_prompt(self, state: SessionState) -> str:
         preferences = "\n".join(f"- {item}" for item in state.preference_profile) or "- None yet."
+        local_preferences = "\n".join(f"- {item}" for item in state.local_preference_hints) or "- None yet."
         revision_history = state.format_revision_history()
         return f"""
 Username:
@@ -752,6 +909,9 @@ User task description:
 Saved user profile:
 {preferences}
 
+Current local passage preferences:
+{local_preferences}
+
 Interruption history:
 {revision_history}
 
@@ -762,5 +922,5 @@ Current live text:
 {state.live_text}
 
 Instruction:
-Continue the writing as streaming prose based on the user's description of task and saved profile.
+Continue the writing as streaming prose based on the user's description of task, saved profile, and local passage preferences.
 """

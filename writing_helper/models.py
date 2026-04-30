@@ -27,6 +27,16 @@ class ReplacementGuidance:
 class ProfileUpdateSuggestion:
     preference_summary: str
     confidence: float
+    preference_key: str = ""
+    scope: str = "local"
+    rationale: str = ""
+
+
+@dataclass
+class PreferenceObservation:
+    key: str
+    summary: str
+    count: int = 0
 
 
 @dataclass
@@ -61,6 +71,7 @@ class ReplacementOption:
     explanation: str
     replacement_text: str
     option_kind: str = "reason"
+    category: str = ""
 
 
 @dataclass
@@ -77,12 +88,16 @@ class RevisionEvent:
     selection_kind: str
     custom_input: str
     updated_preference_profile: List[str] = field(default_factory=list)
+    applied_local_preferences: List[str] = field(default_factory=list)
+    applied_memory_scope: str = "local"
+    promoted_profile_summary: str = ""
 
 
 @dataclass
 class UserProfile:
     username: str
     preference_profile: List[str] = field(default_factory=list)
+    preference_observations: List[PreferenceObservation] = field(default_factory=list)
     revision_log: List[RevisionEvent] = field(default_factory=list)
     created_at: float = 0.0
     updated_at: float = 0.0
@@ -95,6 +110,8 @@ class SessionState:
     live_text: str = ""
     accepted_text: str = ""
     preference_profile: List[str] = field(default_factory=list)
+    local_preference_hints: List[str] = field(default_factory=list)
+    preference_observations: List[PreferenceObservation] = field(default_factory=list)
     replacement_options: List[ReplacementOption] = field(default_factory=list)
     interruption_context: InterruptionContext = field(default_factory=InterruptionContext)
     active_interpreter_result: Optional[InterpreterResult] = None
@@ -108,6 +125,8 @@ class SessionState:
             "accepted_text": self.accepted_text,
             "live_text": self.live_text,
             "preference_profile": list(self.preference_profile),
+            "local_preference_hints": list(self.local_preference_hints),
+            "preference_observations": [asdict(item) for item in self.preference_observations],
             "stop_point": {
                 "termination_point": self.interruption_context.termination_point,
                 "last_sentence": self.interruption_context.last_sentence,
@@ -131,6 +150,7 @@ class SessionState:
                 f"   Selected reason: {event.selected_reason or '[Pending]'}\n"
                 f"   Selected revision: {event.selected_revision or '[Pending]'}\n"
                 f"   Selection kind: {event.selection_kind}\n"
-                f"   Custom input: {event.custom_input or '[None]'}"
+                f"   Custom input: {event.custom_input or '[None]'}\n"
+                f"   Memory scope: {event.applied_memory_scope or '[None]'}"
             )
         return "\n".join(lines)

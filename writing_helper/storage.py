@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Dict, Tuple
 
-from .models import InterruptionContext, RevisionEvent, UserProfile
+from .models import InterruptionContext, PreferenceObservation, RevisionEvent, UserProfile
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +47,9 @@ def _revision_event_from_dict(payload: Dict) -> RevisionEvent:
         selection_kind=payload.get("selection_kind", ""),
         custom_input=payload.get("custom_input", ""),
         updated_preference_profile=list(payload.get("updated_preference_profile", [])),
+        applied_local_preferences=list(payload.get("applied_local_preferences", [])),
+        applied_memory_scope=payload.get("applied_memory_scope", "local"),
+        promoted_profile_summary=payload.get("promoted_profile_summary", ""),
     )
 
 
@@ -59,6 +62,15 @@ def load_or_create_user_profile(username: str) -> Tuple[UserProfile, bool]:
         profile = UserProfile(
             username=payload.get("username", username),
             preference_profile=list(payload.get("preference_profile", [])),
+            preference_observations=[
+                PreferenceObservation(
+                    key=item.get("key", ""),
+                    summary=item.get("summary", ""),
+                    count=int(item.get("count", 0) or 0),
+                )
+                for item in payload.get("preference_observations", [])
+                if item.get("key") and item.get("summary")
+            ],
             revision_log=[_revision_event_from_dict(item) for item in payload.get("revision_log", [])],
             created_at=payload.get("created_at", now),
             updated_at=payload.get("updated_at", now),
@@ -78,6 +90,14 @@ def save_user_profile(profile: UserProfile) -> None:
     payload = {
         "username": profile.username,
         "preference_profile": list(profile.preference_profile),
+        "preference_observations": [
+            {
+                "key": item.key,
+                "summary": item.summary,
+                "count": item.count,
+            }
+            for item in profile.preference_observations
+        ],
         "revision_log": [
             {
                 "event_id": event.event_id,
@@ -97,6 +117,9 @@ def save_user_profile(profile: UserProfile) -> None:
                 "selection_kind": event.selection_kind,
                 "custom_input": event.custom_input,
                 "updated_preference_profile": event.updated_preference_profile,
+                "applied_local_preferences": event.applied_local_preferences,
+                "applied_memory_scope": event.applied_memory_scope,
+                "promoted_profile_summary": event.promoted_profile_summary,
             }
             for event in profile.revision_log
         ],

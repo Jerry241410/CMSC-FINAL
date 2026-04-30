@@ -15,7 +15,7 @@ from .agents import (
     StreamingWriterAgent,
 )
 from .constants import MAX_REASON_OPTIONS, TARGET_REASON_OPTIONS
-from .models import InterpreterResult, ReplacementOption, RevisionEvent, SessionState, UserProfile
+from .models import InterpreterResult, ProfileUpdateSuggestion, ReplacementOption, RevisionEvent, SessionState, UserProfile
 from .storage import load_or_create_user_profile, save_user_profile
 from .text_utils import extract_interruption_context
 
@@ -103,6 +103,8 @@ class WritingOrchestrator:
         self.state.live_text = ""
         self.state.accepted_text = ""
         self.state.preference_profile = list(profile.preference_profile)
+        self.state.preference_observations = list(profile.preference_observations)
+        self.state.local_preference_hints = []
         self.state.revision_log = list(profile.revision_log)
         self.state.replacement_options = []
         self.state.active_interpreter_result = None
@@ -120,10 +122,10 @@ class WritingOrchestrator:
             (
                 "Guidance before use:\n"
                 "If the current content becomes unsatisfactory, click 'Stop Streaming'.\n"
-                "The interpreter will analyze the stop point and generate replacement options."
+                "The interpreter will analyze the stop point and generate 10 standardized replacement options."
             ),
         )
-        self._emit("profile_update", self.state.preference_profile)
+        self._emit_profile_view()
         self._emit("status", "Starting streaming generation...")
         self._submit_coroutine(self._run_main_stream())
 
@@ -245,6 +247,13 @@ class WritingOrchestrator:
                 behavior_text=other_text,
                 behavior_mode=other_mode,
             )
+            custom_memory = await self.memory_agent.interpret_custom_memory(
+                task=self.state.task,
+                passage=self.state.live_text,
+                current_sentence=self.state.interruption_context.current_sentence,
+                user_input=other_text,
+                existing_profile=self.state.preference_profile,
+            )
             self.state.active_interpreter_result = behavior_result
             if other_mode == "describe_revision":
                 generated_revision = await self.replacement_agent.build_custom_revision(
@@ -252,36 +261,22 @@ class WritingOrchestrator:
                     passage=self.state.live_text,
                     custom_instruction=other_text,
                 )
-                profile_summary = await self.memory_agent.summarize_choice(
-                    task=self.state.task,
-                    current_sentence=self.state.interruption_context.current_sentence,
-                    selected_reason=other_text,
-                    selected_revision=generated_revision,
-                    existing_profile=self.state.preference_profile,
-                )
                 self._apply_revision_selection(
                     selected_reason_id="OTHER",
                     selected_reason="Other",
                     selected_revision=generated_revision,
                     selection_kind="other_describe_revision",
                     custom_input=other_text,
-                    profile_summary=profile_summary or self._preferred_profile_summary(behavior_result, other_text),
+                    memory_update=custom_memory,
                 )
             else:
-                profile_summary = await self.memory_agent.summarize_choice(
-                    task=self.state.task,
-                    current_sentence=self.state.interruption_context.current_sentence,
-                    selected_reason=other_text,
-                    selected_revision=other_text,
-                    existing_profile=self.state.preference_profile,
-                )
                 self._apply_revision_selection(
                     selected_reason_id="OTHER",
                     selected_reason="Other",
                     selected_revision=other_text,
                     selection_kind="other_write_own_text",
                     custom_input=other_text,
-                    profile_summary=profile_summary or self._preferred_profile_summary(behavior_result, other_text),
+                    memory_update=custom_memory,
                 )
             self._emit("interpreter_result", behavior_result.to_dict())
         except Exception as e:
@@ -292,12 +287,13 @@ class WritingOrchestrator:
     async def _handle_selected_option(self, selected: ReplacementOption) -> None:
         self._set_busy(True)
         try:
-            profile_summary = await self.memory_agent.summarize_choice(
-                task=self.state.task,
-                current_sentence=self.state.interruption_context.current_sentence,
-                selected_reason=selected.reason,
-                selected_revision=selected.replacement_text,
-                existing_profile=self.state.preference_profile,
+            key, summary = self.memory_agent.summarize_standard_reason(selected.reason_id, selected.reason)
+            memory_update = ProfileUpdateSuggestion(
+                preference_summary=summary,
+                confidence=0.8,
+                preference_key=key,
+                scope="local",
+                rationale="Standardized replacement choices apply locally first and become global after repeated similar selections.",
             )
             self._apply_revision_selection(
                 selected_reason_id=selected.reason_id,
@@ -305,7 +301,7 @@ class WritingOrchestrator:
                 selected_revision=selected.replacement_text,
                 selection_kind="replacement_option",
                 custom_input="",
-                profile_summary=profile_summary or self._preferred_profile_summary(self.state.active_interpreter_result, selected.reason),
+                memory_update=memory_update,
             )
         except Exception as e:
             self._emit("error", f"{type(e).__name__}: {e}")
@@ -319,10 +315,32 @@ class WritingOrchestrator:
         selected_revision: str,
         selection_kind: str,
         custom_input: str,
-        profile_summary: str,
+        memory_update: ProfileUpdateSuggestion,
     ) -> None:
-        if profile_summary:
-            self.state.preference_profile = self.memory_agent.update_profile(self.state.preference_profile, profile_summary)
+        local_summary = memory_update.preference_summary.strip()
+        promoted_summary = ""
+        applied_scope = memory_update.scope or "local"
+
+        if local_summary:
+            self.state.local_preference_hints = self.memory_agent.update_local_hints(
+                self.state.local_preference_hints,
+                local_summary,
+            )
+
+        if memory_update.scope == "global":
+            if local_summary:
+                self.state.preference_profile = self.memory_agent.update_profile(self.state.preference_profile, local_summary)
+                promoted_summary = local_summary
+        else:
+            self.state.preference_observations, count_after = self.memory_agent.record_observation(
+                self.state.preference_observations,
+                memory_update.preference_key,
+                local_summary,
+            )
+            if local_summary and self.memory_agent.should_promote(count_after):
+                self.state.preference_profile = self.memory_agent.update_profile(self.state.preference_profile, local_summary)
+                promoted_summary = local_summary
+                applied_scope = "local_promoted_global"
 
         start = self.state.interruption_context.replacement_start
         prefix = self.state.live_text[:start].rstrip()
@@ -344,6 +362,9 @@ class WritingOrchestrator:
             selection_kind=selection_kind,
             custom_input=custom_input,
             updated_preference_profile=list(self.state.preference_profile),
+            applied_local_preferences=list(self.state.local_preference_hints),
+            applied_memory_scope=applied_scope,
+            promoted_profile_summary=promoted_summary,
         )
         self.state.revision_log.append(event)
         self._save_profile()
@@ -352,7 +373,7 @@ class WritingOrchestrator:
         self.state.active_interpreter_result = None
         self._emit("set_text", self.state.live_text)
         self._emit("accepted_text", self.state.accepted_text)
-        self._emit("profile_update", self.state.preference_profile)
+        self._emit_profile_view()
         self._emit("replacement_options", [])
         self._emit(
             "revision_applied",
@@ -361,10 +382,15 @@ class WritingOrchestrator:
                 "selected_reason": selected_reason,
                 "selected_revision": selected_revision,
                 "selection_kind": selection_kind,
-                "profile_summary_added": profile_summary,
+                "local_memory_applied": local_summary,
+                "profile_summary_added": promoted_summary,
+                "memory_scope": applied_scope,
             },
         )
-        self._emit("status", "Revision applied, saved to the user profile, and accepted as the new baseline. Continuing generation...")
+        self._emit(
+            "status",
+            "Revision applied, local preference memory updated, and the new text is now the baseline. Continuing generation...",
+        )
         self._submit_coroutine(self._resume_after_revision())
 
     async def _resume_after_revision(self) -> None:
@@ -373,67 +399,6 @@ class WritingOrchestrator:
         self._stop_flag.clear()
         await self._run_main_stream()
 
-    def _preferred_profile_summary(self, interpreter_result: Optional[InterpreterResult], fallback: str) -> str:
-        fallback_text = fallback.strip()
-        if not fallback_text:
-            if interpreter_result is None:
-                return ""
-            return interpreter_result.profile_update.preference_summary.strip()
-
-        derived = self._derive_preference_from_reason(fallback_text)
-        if derived:
-            return derived
-
-        if interpreter_result is None:
-            return fallback_text
-        summary = interpreter_result.profile_update.preference_summary.strip()
-        return summary or fallback_text
-
-    def _derive_preference_from_reason(self, reason_text: str) -> str:
-        reason = " ".join(reason_text.strip().split())
-        lowered = reason.lower()
-
-        preference_patterns = [
-            (
-                any(word in lowered for word in ["generic", "concrete detail", "sharper wording"]),
-                "Prefers writing that is concrete, specific, and supported with sharper detail.",
-            ),
-            (
-                any(word in lowered for word in ["too specific", "too narrow", "overcommit"]),
-                "Prefers writing that stays flexible and does not become too narrow or overcommitted too early.",
-            ),
-            (
-                any(word in lowered for word in ["example", "supporting detail", "evidence"]),
-                "Prefers claims to be grounded with stronger examples, evidence, or supporting detail.",
-            ),
-            (
-                any(word in lowered for word in ["thoughtful", "developed", "substantial claim", "insight"]),
-                "Prefers writing that develops ideas more thoughtfully instead of stating them too thinly.",
-            ),
-            (
-                any(word in lowered for word in ["repeat", "redund", "duplicate"]),
-                "Dislikes repetition and prefers each sentence to add a fresh move rather than restating earlier points.",
-            ),
-            (
-                any(word in lowered for word in ["tone", "voice", "off-style", "formal", "stiff"]),
-                "Prefers a tone and voice that match the user's intended style more closely.",
-            ),
-            (
-                any(word in lowered for word in ["long", "dense", "unclear", "harder to process"]),
-                "Prefers sentences that are easier to process, with clearer wording and lighter density.",
-            ),
-            (
-                any(word in lowered for word in ["transition", "align", "task"]),
-                "Prefers smoother transitions and closer alignment with the writing task.",
-            ),
-        ]
-
-        for matched, preference in preference_patterns:
-            if matched:
-                return preference
-
-        return reason
-
     def _stop_point_payload(self) -> dict:
         return {
             "termination_point": self.state.interruption_context.termination_point,
@@ -441,9 +406,21 @@ class WritingOrchestrator:
             "current_sentence": self.state.interruption_context.current_sentence,
         }
 
+    def _emit_profile_view(self) -> None:
+        payload = {
+            "global_profile": list(self.state.preference_profile),
+            "local_profile": list(self.state.local_preference_hints),
+            "observations": [
+                {"key": item.key, "summary": item.summary, "count": item.count}
+                for item in self.state.preference_observations
+            ],
+        }
+        self._emit("profile_update", payload)
+
     def _save_profile(self) -> None:
         if self.user_profile is None:
             return
         self.user_profile.preference_profile = list(self.state.preference_profile)
+        self.user_profile.preference_observations = list(self.state.preference_observations)
         self.user_profile.revision_log = list(self.state.revision_log)
         save_user_profile(self.user_profile)
