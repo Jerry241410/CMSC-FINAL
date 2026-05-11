@@ -43,6 +43,38 @@ CUSTOM_PREFERENCE_POOL = [
     "Avoid inflated novelty claims unless the evidence is explicit.",
     "Use transitions that make the argumentative progression easy to follow.",
     "Keep theoretical terms precise and avoid vague abstractions.",
+    "Name the methodological limitation before drawing a strong conclusion.",
+    "Prefer multi-step causal explanation over simple correlation claims.",
+    "Use compact signposting at paragraph openings without sounding formulaic.",
+    "Avoid celebratory technology language unless grounded in evidence.",
+    "Keep normative claims separate from descriptive claims.",
+    "Use field-specific terms, but define them when they become load-bearing.",
+    "Prefer examples that reveal a tradeoff rather than merely decorate the claim.",
+    "End paragraphs with an analytical implication instead of a summary sentence.",
+    "Avoid overusing 'important' and replace it with the exact reason something matters.",
+    "When discussing institutions, specify incentives, constraints, and actors.",
+]
+
+STRUCTURAL_PREFERENCE_POOL = [
+    "Open paragraphs with a debatable claim rather than a broad topic sentence.",
+    "Use one governing idea per paragraph and subordinate examples to that idea.",
+    "Move from claim to mechanism to evidence before introducing qualifications.",
+    "Keep sentence rhythm varied: short claim, longer explanation, concise implication.",
+    "Make counterarguments concrete enough that they feel like real objections.",
+    "Prefer synthesis across sources rather than source-by-source narration.",
+    "Use transitions that indicate logical relation, such as contrast, cause, or scope.",
+    "Avoid ending sections with vague future-facing gestures.",
+]
+
+VOICE_PREFERENCE_POOL = [
+    "Write with restrained confidence rather than dramatic emphasis.",
+    "Avoid generic academic filler such as 'in today's society' or 'throughout history'.",
+    "Prefer precise verbs over nominalized phrases when possible.",
+    "Use cautious qualifiers only when they clarify uncertainty, not as padding.",
+    "Keep the prose analytical but readable for an interdisciplinary audience.",
+    "Avoid rhetorical questions and let claims carry the argumentative pressure.",
+    "Prefer concrete nouns over abstract umbrella terms when the context allows.",
+    "Make evaluative language traceable to evidence in the paragraph.",
 ]
 
 ACADEMIC_DOMAINS = [
@@ -80,6 +112,9 @@ class SimulationStepRecord:
     interrupted: bool
     interruption_reason: str
     interruption_point: Dict[str, Any]
+    simulator_confidence: float = 0.0
+    simulator_decision_rationale: str = ""
+    system_interpretation: Dict[str, Any] = field(default_factory=dict)
     elapsed_seconds: float = 0.0
     cumulative_elapsed_seconds: float = 0.0
     recovery_after_step: Dict[str, Any] = field(default_factory=dict)
@@ -258,10 +293,15 @@ def generate_fake_user_scenarios(count: int = 100, seed: int = 7) -> List[FakeUs
     for index in range(count):
         domain = rng.choice(ACADEMIC_DOMAINS)
         task = rng.choice(TASK_TEMPLATES).format(domain=domain)
-        standard_count = rng.randint(2, 4)
-        custom_count = rng.randint(1, 2)
+        standard_count = rng.randint(3, 5)
+        custom_count = rng.randint(2, 3)
         profile_items = rng.sample(STANDARD_PREFERENCE_POOL, k=standard_count)
         profile_items.extend(rng.sample(CUSTOM_PREFERENCE_POOL, k=custom_count))
+        profile_items.extend(rng.sample(STRUCTURAL_PREFERENCE_POOL, k=2))
+        profile_items.extend(rng.sample(VOICE_PREFERENCE_POOL, k=2))
+        profile_items.append(
+            f"For {domain}, prefer examples that name a concrete case, actor, or mechanism before generalizing."
+        )
         rng.shuffle(profile_items)
         scenarios.append(
             FakeUserScenario(
@@ -345,6 +385,8 @@ class HeadlessInterruptionSimulator:
                             interrupted=False,
                             interruption_reason=str(assessment.get("reason", "")).strip(),
                             interruption_point={},
+                            simulator_confidence=float(assessment.get("confidence", 0.0) or 0.0),
+                            simulator_decision_rationale=str(assessment.get("reason", "")).strip(),
                             recovery_after_step=compute_profile_similarity(scenario.target_profile, state.preference_profile),
                             helper_profile_after_step=list(state.preference_profile),
                             helper_local_memory_after_step=list(state.local_preference_hints),
@@ -391,6 +433,9 @@ class HeadlessInterruptionSimulator:
                         interrupted=True,
                         interruption_reason=str(assessment.get("reason", "")).strip(),
                         interruption_point=interruption_point,
+                        simulator_confidence=float(assessment.get("confidence", 0.0) or 0.0),
+                        simulator_decision_rationale=str(decision.get("rationale", "")).strip(),
+                        system_interpretation=interpreter_result.to_dict(),
                         recovery_after_step=compute_profile_similarity(scenario.target_profile, state.preference_profile),
                         replacement_options=[asdict(item) for item in replacement_options],
                         selected_action=selected_payload["selected_action"],
@@ -736,6 +781,108 @@ async def run_default_fake_profile_simulation(
     return await simulator.run_batch(scenarios=scenarios, output_path=path)
 
 
+def _offline_previous_sentence(scenario: FakeUserScenario, step_index: int) -> str:
+    return (
+        f"In {scenario.task.split(' in ')[-1].rstrip('.')}, the draft has established a broad claim "
+        f"but has not yet made the user's preferred argumentative move."
+    )
+
+
+def _offline_current_sentence(scenario: FakeUserScenario, step_index: int, missed_item: str) -> str:
+    return (
+        f"This paragraph makes a general point about the debate, but it does not yet satisfy the hidden preference "
+        f"to {missed_item[:1].lower() + missed_item[1:].rstrip('.')}"
+    )
+
+
+def _offline_generation_for_step(scenario: FakeUserScenario, step_index: int, missed_item: str) -> str:
+    previous = _offline_previous_sentence(scenario, step_index)
+    current = _offline_current_sentence(scenario, step_index, missed_item)
+    return f"{previous} {current}."
+
+
+def _offline_system_interpretation(
+    scenario: FakeUserScenario,
+    step_index: int,
+    target_item: str,
+    missed_item: str,
+    interruption_point: Dict[str, Any],
+) -> Dict[str, Any]:
+    reason_id = [
+        "LANG_TOO_GENERAL",
+        "CONTENT_MECHANISM",
+        "CONTENT_EXAMPLE",
+        "CONTENT_REFINED",
+        "CONTENT_TRANSITION",
+        "LANG_TONE",
+        "CONTENT_OPPOSITE",
+        "LANG_CONCISE",
+    ][(step_index - 1) % 8]
+    return {
+        "stop_point": interruption_point,
+        "likely_user_intent": f"The user likely wants the draft to honor this profile constraint: {missed_item}",
+        "reason_candidates": [
+            {
+                "id": reason_id,
+                "reason": f"The interrupted sentence is under-specified relative to the hidden preference: {missed_item}",
+            },
+            {
+                "id": "CONTENT_REFINED",
+                "reason": f"The replacement should convert the broad sentence into a more profile-specific move for {scenario.user_id}.",
+            },
+        ],
+        "replacement_guidance": {
+            "goal": f"Revise the interrupted sentence so it reflects: {target_item}",
+            "desired_properties": [target_item, "stay aligned with the essay task", "keep the edit sentence-level"],
+            "avoid": ["generic filler", "ignoring the recovered profile preference"],
+        },
+        "profile_update": {
+            "preference_summary": target_item,
+            "confidence": 0.84,
+            "preference_key": _profile_key(target_item),
+            "scope": "global",
+            "rationale": "Offline simulator treats this as a stable hidden preference exposed by interruption behavior.",
+        },
+    }
+
+
+def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dict[str, Any]]:
+    return [
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "OFFLINE_PROFILE_MATCH",
+            "reason": f"Recover hidden profile preference: {target_item}",
+            "explanation": f"The simulator interrupted because the draft missed: {missed_item}",
+            "replacement_text": f"Revise the sentence so it follows this stable preference: {target_item}",
+            "option_kind": "reason",
+            "category": "profile",
+        },
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "OFFLINE_LOCAL_FIX",
+            "reason": "Make a local sentence-level fix.",
+            "explanation": "This option repairs the current sentence but is less useful for long-term profile recovery.",
+            "replacement_text": "Revise the sentence with a clearer local claim.",
+            "option_kind": "reason",
+            "category": "local",
+        },
+    ]
+
+
+def _profile_key(text: str) -> str:
+    cleaned = "".join(ch.lower() if ch.isalnum() else "_" for ch in text).strip("_")
+    while "__" in cleaned:
+        cleaned = cleaned.replace("__", "_")
+    return cleaned[:48] or "offline_profile_preference"
+
+
+def _truncate(text: str, limit: int) -> str:
+    compact = " ".join(text.split())
+    if len(compact) <= limit:
+        return compact
+    return compact[: max(0, limit - 3)].rstrip() + "..."
+
+
 def run_offline_fake_profile_recovery(
     count: int = 100,
     seed: int = 7,
@@ -752,31 +899,52 @@ def run_offline_fake_profile_recovery(
         steps = []
         cumulative = 0.0
         for step_index in range(1, max_steps + 1):
-            step_elapsed = rng.uniform(25.0, 85.0)
+            step_elapsed = rng.uniform(35.0, 95.0)
             cumulative += step_elapsed
             target_item = scenario.target_profile[(step_index - 1) % len(scenario.target_profile)]
+            missed_item = target_item
+            generation_text = _offline_generation_for_step(scenario, step_index, missed_item)
+            interruption_point = {
+                "termination_point": _truncate(generation_text, 140),
+                "last_sentence": _offline_previous_sentence(scenario, step_index),
+                "current_sentence": _offline_current_sentence(scenario, step_index, missed_item),
+                "replacement_start": 0,
+            }
+            system_interpretation = _offline_system_interpretation(
+                scenario=scenario,
+                step_index=step_index,
+                target_item=target_item,
+                missed_item=missed_item,
+                interruption_point=interruption_point,
+            )
+            replacement_options = _offline_replacement_options(target_item, missed_item)
             helper_local_memory = list(dict.fromkeys(helper_local_memory + [target_item]))
             helper_profile = list(dict.fromkeys(helper_profile + [target_item]))
+            selected_action = "select_option" if step_index % 4 else "manual_describe"
             steps.append(
                 asdict(
                     SimulationStepRecord(
                         step_index=step_index,
                         elapsed_seconds=step_elapsed,
                         cumulative_elapsed_seconds=cumulative,
-                        generation_text=f"Offline generated paragraph for {scenario.user_id}, step {step_index}.",
+                        generation_text=generation_text,
                         interrupted=True,
-                        interruption_reason="Offline deterministic recovery step; no model call was made.",
-                        interruption_point={
-                            "termination_point": "offline",
-                            "last_sentence": "",
-                            "current_sentence": "",
-                            "replacement_start": 0,
-                        },
+                        interruption_reason=(
+                            f"The simulated user interrupts because the generated sentence misses profile item: {missed_item}"
+                        ),
+                        interruption_point=interruption_point,
+                        simulator_confidence=round(rng.uniform(0.72, 0.94), 2),
+                        simulator_decision_rationale=(
+                            f"Best available repair is to reveal and store preference: {target_item}"
+                        ),
+                        system_interpretation=system_interpretation,
                         recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),
-                        selected_action="offline_profile_recovery",
-                        selected_reason_id="OFFLINE",
-                        selected_reason=target_item,
-                        selected_revision=target_item,
+                        replacement_options=replacement_options,
+                        selected_action=selected_action,
+                        selected_reason_id=replacement_options[0]["reason_id"],
+                        selected_reason=replacement_options[0]["reason"],
+                        selected_revision=replacement_options[0]["replacement_text"],
+                        manual_input=target_item if selected_action == "manual_describe" else "",
                         helper_profile_after_step=list(helper_profile),
                         helper_local_memory_after_step=list(helper_local_memory),
                         profile_summary_added=target_item,

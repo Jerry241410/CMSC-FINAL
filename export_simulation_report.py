@@ -1,5 +1,6 @@
 import argparse
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -56,6 +57,12 @@ def build_step_rows(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "interrupted": step.get("interrupted", False),
                     "generation_text": step.get("generation_text", ""),
                     "interruption_reason": step.get("interruption_reason", ""),
+                    "elapsed_seconds": step.get("elapsed_seconds", 0.0),
+                    "cumulative_elapsed_seconds": step.get("cumulative_elapsed_seconds", 0.0),
+                    "simulator_confidence": step.get("simulator_confidence", 0.0),
+                    "simulator_decision_rationale": step.get("simulator_decision_rationale", ""),
+                    "system_interpretation": step.get("system_interpretation", {}),
+                    "recovery_after_step": step.get("recovery_after_step", {}),
                     "interruption_point": step.get("interruption_point", {}),
                     "replacement_options": step.get("replacement_options", []),
                     "selected_action": step.get("selected_action", ""),
@@ -81,10 +88,31 @@ def build_report(input_name: str, payload: Dict[str, Any]) -> str:
     results = payload.get("results", [])
     scenario_count = metadata.get("scenario_count", len(results))
     elapsed = float(metadata.get("finished_at", 0) or 0) - float(metadata.get("started_at", 0) or 0)
-    interrupted_steps = [step for result in results for step in result.get("steps", []) if step.get("interrupted")]
+    interrupted_steps = [
+        {**step, "user_id": result.get("user_id", "")}
+        for result in results
+        for step in result.get("steps", [])
+        if step.get("interrupted")
+    ]
     manual_steps = [step for step in interrupted_steps if step.get("selected_action") in {"manual_describe", "manual_write"}]
     final_recalls = [float(result.get("similarity", {}).get("recall_ratio", 0.0) or 0.0) for result in results]
     final_precisions = [float(result.get("similarity", {}).get("precision_ratio", 0.0) or 0.0) for result in results]
+    target_lengths = [len(result.get("target_profile", [])) for result in results]
+    helper_lengths = [len(result.get("helper_profile", [])) for result in results]
+    exact_matches = [
+        float(result.get("similarity", {}).get("exact_profile_item_matches", 0.0) or 0.0)
+        for result in results
+    ]
+    action_counts = Counter(str(step.get("selected_action", "") or "none") for step in interrupted_steps)
+    scope_counts = Counter(str(step.get("memory_scope", "") or "none") for step in interrupted_steps)
+    reason_counts = Counter(str(step.get("selected_reason_id", "") or "none") for step in interrupted_steps)
+    step_durations = [float(step.get("elapsed_seconds", 0.0) or 0.0) for result in results for step in result.get("steps", [])]
+    cumulative_durations = [
+        float(step.get("cumulative_elapsed_seconds", 0.0) or 0.0)
+        for result in results
+        for step in result.get("steps", [])
+        if float(step.get("cumulative_elapsed_seconds", 0.0) or 0.0) > 0
+    ]
     timeline = build_time_recovery_timeline(results)
 
     lines = [
@@ -102,12 +130,31 @@ def build_report(input_name: str, payload: Dict[str, Any]) -> str:
         "",
         "## Summary",
         "",
+        f"- Samples used for profile recovery: {scenario_count}",
         f"- Average final profile recall: {_average(final_recalls):.3f}",
+        f"- Median final profile recall: {_median(final_recalls):.3f}",
+        f"- P10/P90 final profile recall: {_percentile(final_recalls, 10):.3f} / {_percentile(final_recalls, 90):.3f}",
         f"- Average final profile precision: {_average(final_precisions):.3f}",
+        f"- Median final profile precision: {_median(final_precisions):.3f}",
         f"- Average overlap word count: {float(summary.get('average_overlap_word_count', 0.0)):.2f}",
+        f"- Average exact profile-item matches: {_average(exact_matches):.2f}",
+        f"- Average target profile size: {_average([float(value) for value in target_lengths]):.2f} items",
+        f"- Average recovered helper profile size: {_average([float(value) for value in helper_lengths]):.2f} items",
         f"- Interruptions: {len(interrupted_steps)}",
         f"- Manual/custom actions: {len(manual_steps)}",
+        f"- Average interruption step duration: {_average(step_durations):.2f} seconds",
+        f"- Median cumulative recovery time observed: {_median(cumulative_durations):.2f} seconds",
         f"- Average elapsed seconds per scenario: {float(summary.get('average_elapsed_seconds', 0.0)):.2f}",
+        "",
+        "## Distribution Statistics",
+        "",
+        "| Metric | Mean | Median | P10 | P90 | Min | Max |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        _metric_row("Final recall", final_recalls),
+        _metric_row("Final precision", final_precisions),
+        _metric_row("Target profile items", [float(value) for value in target_lengths]),
+        _metric_row("Recovered profile items", [float(value) for value in helper_lengths]),
+        _metric_row("Step duration seconds", step_durations),
         "",
         "## Recovery Over Time",
         "",
@@ -138,6 +185,27 @@ def build_report(input_name: str, payload: Dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Action And Memory Counts",
+            "",
+            "| Category | Value | Count |",
+            "| --- | --- | ---: |",
+        ]
+    )
+    for value, count in action_counts.most_common():
+        lines.append(f"| Selected action | {_escape_cell(value)} | {count} |")
+    for value, count in scope_counts.most_common():
+        lines.append(f"| Memory scope | {_escape_cell(value)} | {count} |")
+    for value, count in reason_counts.most_common(12):
+        lines.append(f"| Selected reason id | {_escape_cell(value)} | {count} |")
+
+    if results:
+        lines.extend(build_example_section(results[0]))
+
+    lines.extend(build_interruption_timeline(interrupted_steps))
+
+    lines.extend(
+        [
+            "",
             "## Notes",
             "",
             "- Recall is lexical overlap between the generated helper profile and the hidden target profile.",
@@ -146,6 +214,61 @@ def build_report(input_name: str, payload: Dict[str, Any]) -> str:
         ]
     )
     return "\n".join(lines) + "\n"
+
+
+def build_example_section(result: Dict[str, Any]) -> List[str]:
+    lines = [
+        "",
+        "## Example Profile And Interruption Conversation",
+        "",
+        f"User id: `{result.get('user_id', '')}`",
+        "",
+        "Target hidden profile:",
+    ]
+    for item in result.get("target_profile", []):
+        lines.append(f"- {item}")
+    lines.extend(["", "Conversation trace:"])
+    for step in result.get("steps", [])[:4]:
+        interpretation = step.get("system_interpretation", {})
+        reasons = interpretation.get("reason_candidates", [])
+        top_reason = reasons[0].get("reason", "") if reasons else ""
+        lines.extend(
+            [
+                "",
+                f"Step {step.get('step_index', 0)} at {float(step.get('cumulative_elapsed_seconds', 0.0) or 0.0):.1f}s:",
+                f"- Assistant draft: {_truncate(step.get('generation_text', ''), 320)}",
+                f"- Simulator interrupts: {_truncate(step.get('interruption_reason', ''), 260)}",
+                f"- Simulator confidence: {float(step.get('simulator_confidence', 0.0) or 0.0):.2f}",
+                f"- System interpretation: {_truncate(top_reason, 260)}",
+                f"- Selected repair: {_truncate(step.get('selected_revision', ''), 260)}",
+                f"- Recovery after step: {float(step.get('recovery_after_step', {}).get('recall_ratio', 0.0) or 0.0):.3f}",
+            ]
+        )
+    return lines
+
+
+def build_interruption_timeline(interrupted_steps: List[Dict[str, Any]]) -> List[str]:
+    lines = [
+        "",
+        "## Interruption Timeline",
+        "",
+        "Every interrupted step is listed below with its cumulative simulated time, simulator rationale, and system interpretation.",
+        "",
+        "| # | User | Step | Time | Simulator interruption reason | System interpretation | Recovery recall |",
+        "| ---: | --- | ---: | ---: | --- | --- | ---: |",
+    ]
+    for index, step in enumerate(interrupted_steps, start=1):
+        interpretation = step.get("system_interpretation", {})
+        reasons = interpretation.get("reason_candidates", [])
+        top_reason = reasons[0].get("reason", "") if reasons else ""
+        lines.append(
+            f"| {index} | {_escape_cell(step.get('user_id', ''))} | {step.get('step_index', 0)} | "
+            f"{float(step.get('cumulative_elapsed_seconds', 0.0) or 0.0):.1f}s | "
+            f"{_escape_cell(_truncate(step.get('interruption_reason', ''), 180))} | "
+            f"{_escape_cell(_truncate(top_reason, 180))} | "
+            f"{float(step.get('recovery_after_step', {}).get('recall_ratio', 0.0) or 0.0):.3f} |"
+        )
+    return lines
 
 
 def build_time_recovery_timeline(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -186,6 +309,19 @@ def _average(values: List[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
+def _percentile(values: List[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    position = (len(ordered) - 1) * percentile / 100.0
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    weight = position - lower
+    return ordered[lower] * (1 - weight) + ordered[upper] * weight
+
+
 def _median(values: List[float]) -> float:
     if not values:
         return 0.0
@@ -194,6 +330,25 @@ def _median(values: List[float]) -> float:
     if len(ordered) % 2:
         return ordered[middle]
     return (ordered[middle - 1] + ordered[middle]) / 2
+
+
+def _metric_row(label: str, values: List[float]) -> str:
+    return (
+        f"| {label} | {_average(values):.3f} | {_median(values):.3f} | "
+        f"{_percentile(values, 10):.3f} | {_percentile(values, 90):.3f} | "
+        f"{(min(values) if values else 0.0):.3f} | {(max(values) if values else 0.0):.3f} |"
+    )
+
+
+def _escape_cell(value: Any) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ").strip()
+
+
+def _truncate(text: Any, limit: int) -> str:
+    compact = " ".join(str(text).split())
+    if len(compact) <= limit:
+        return compact
+    return compact[: max(0, limit - 3)].rstrip() + "..."
 
 
 if __name__ == "__main__":
