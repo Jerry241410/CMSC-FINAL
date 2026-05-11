@@ -788,17 +788,63 @@ def _offline_previous_sentence(scenario: FakeUserScenario, step_index: int) -> s
     )
 
 
-def _offline_current_sentence(scenario: FakeUserScenario, step_index: int, missed_item: str) -> str:
+def _offline_current_sentence(
+    scenario: FakeUserScenario,
+    step_index: int,
+    profile_item: str,
+    satisfies_profile: bool,
+) -> str:
+    if satisfies_profile:
+        return (
+            f"This sentence deliberately follows the user's preference to "
+            f"{profile_item[:1].lower() + profile_item[1:].rstrip('.')}"
+        )
     return (
-        f"This paragraph makes a general point about the debate, but it does not yet satisfy the hidden preference "
-        f"to {missed_item[:1].lower() + missed_item[1:].rstrip('.')}"
+        "This sentence stays broad and fluent, but it does not make the specific profile-sensitive move "
+        "the user expects at this point."
     )
 
 
-def _offline_generation_for_step(scenario: FakeUserScenario, step_index: int, missed_item: str) -> str:
+def _offline_generation_for_step(
+    scenario: FakeUserScenario,
+    step_index: int,
+    profile_item: str,
+    satisfies_profile: bool,
+) -> str:
     previous = _offline_previous_sentence(scenario, step_index)
-    current = _offline_current_sentence(scenario, step_index, missed_item)
+    current = _offline_current_sentence(scenario, step_index, profile_item, satisfies_profile)
     return f"{previous} {current}."
+
+
+def _offline_assess_generation(
+    target_profile: List[str],
+    helper_profile: List[str],
+    latest_chunk: str,
+    expected_item: str,
+) -> Dict[str, Any]:
+    already_recovered = expected_item in helper_profile
+    overlap = _word_overlap_count(expected_item, latest_chunk)
+    expected_tokens = max(1, len(_tokenize(expected_item)))
+    coverage = overlap / expected_tokens
+    interrupt = (not already_recovered) and coverage < 0.35
+    if interrupt:
+        reason = (
+            "The generated chunk sounds plausible but misses an unrecovered hidden preference: "
+            f"{expected_item}"
+        )
+    else:
+        reason = (
+            "The generated chunk is acceptable because it either follows the expected preference "
+            "or the preference is already recovered."
+        )
+    return {
+        "interrupt": interrupt,
+        "reason": reason,
+        "confidence": 0.86 if interrupt else 0.68,
+        "expected_item": expected_item,
+        "coverage": coverage,
+        "target_profile_size": len(target_profile),
+    }
 
 
 def _offline_system_interpretation(
@@ -899,25 +945,67 @@ def run_offline_fake_profile_recovery(
         steps = []
         cumulative = 0.0
         for step_index in range(1, max_steps + 1):
-            step_elapsed = rng.uniform(35.0, 95.0)
+            step_elapsed = rng.uniform(24.0, 118.0)
             cumulative += step_elapsed
             target_item = scenario.target_profile[(step_index - 1) % len(scenario.target_profile)]
-            missed_item = target_item
-            generation_text = _offline_generation_for_step(scenario, step_index, missed_item)
+            recovered_ratio = len(helper_profile) / max(1, len(scenario.target_profile))
+            miss_probability = max(0.25, 0.88 - recovered_ratio * 0.45)
+            satisfies_profile = rng.random() > miss_probability
+            generation_text = _offline_generation_for_step(
+                scenario=scenario,
+                step_index=step_index,
+                profile_item=target_item,
+                satisfies_profile=satisfies_profile,
+            )
+            assessment = _offline_assess_generation(
+                target_profile=scenario.target_profile,
+                helper_profile=helper_profile,
+                latest_chunk=generation_text,
+                expected_item=target_item,
+            )
             interruption_point = {
                 "termination_point": _truncate(generation_text, 140),
                 "last_sentence": _offline_previous_sentence(scenario, step_index),
-                "current_sentence": _offline_current_sentence(scenario, step_index, missed_item),
+                "current_sentence": _offline_current_sentence(
+                    scenario=scenario,
+                    step_index=step_index,
+                    profile_item=target_item,
+                    satisfies_profile=satisfies_profile,
+                ),
                 "replacement_start": 0,
             }
+            if not assessment["interrupt"]:
+                steps.append(
+                    asdict(
+                        SimulationStepRecord(
+                            step_index=step_index,
+                            elapsed_seconds=step_elapsed,
+                            cumulative_elapsed_seconds=cumulative,
+                            generation_text=generation_text,
+                            interrupted=False,
+                            interruption_reason=assessment["reason"],
+                            interruption_point=interruption_point,
+                            simulator_confidence=assessment["confidence"],
+                            simulator_decision_rationale=(
+                                f"Expected profile item coverage was {assessment['coverage']:.2f}; no correction was needed."
+                            ),
+                            recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),
+                            helper_profile_after_step=list(helper_profile),
+                            helper_local_memory_after_step=list(helper_local_memory),
+                            memory_scope="offline_no_update",
+                        )
+                    )
+                )
+                continue
+
             system_interpretation = _offline_system_interpretation(
                 scenario=scenario,
                 step_index=step_index,
                 target_item=target_item,
-                missed_item=missed_item,
+                missed_item=target_item,
                 interruption_point=interruption_point,
             )
-            replacement_options = _offline_replacement_options(target_item, missed_item)
+            replacement_options = _offline_replacement_options(target_item, target_item)
             helper_local_memory = list(dict.fromkeys(helper_local_memory + [target_item]))
             helper_profile = list(dict.fromkeys(helper_profile + [target_item]))
             selected_action = "select_option" if step_index % 4 else "manual_describe"
@@ -929,13 +1017,11 @@ def run_offline_fake_profile_recovery(
                         cumulative_elapsed_seconds=cumulative,
                         generation_text=generation_text,
                         interrupted=True,
-                        interruption_reason=(
-                            f"The simulated user interrupts because the generated sentence misses profile item: {missed_item}"
-                        ),
+                        interruption_reason=assessment["reason"],
                         interruption_point=interruption_point,
-                        simulator_confidence=round(rng.uniform(0.72, 0.94), 2),
+                        simulator_confidence=assessment["confidence"],
                         simulator_decision_rationale=(
-                            f"Best available repair is to reveal and store preference: {target_item}"
+                            f"Expected profile item coverage was {assessment['coverage']:.2f}; repair stores: {target_item}"
                         ),
                         system_interpretation=system_interpretation,
                         recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),

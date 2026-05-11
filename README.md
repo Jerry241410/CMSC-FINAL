@@ -19,31 +19,98 @@ Local browser prototype for interruption-aware AI writing. The app streams a dra
 6. Applying a rewrite updates the text and local preference memory.
 7. Repeated or explicit durable preferences are saved into the user profile.
 
-## Simulation Status
+## Simulation Report
 
-The code includes fake-profile recovery simulation in `writing_helper/simulation.py`.
+The code includes fake-profile recovery simulation in `writing_helper/simulation.py`. The real AI path asks a profile-satisfaction simulator to interrupt only when the latest generation misses, contradicts, or ignores the hidden user profile.
 
-Latest available run was offline because `OPENAI_API_KEY` was not set in this shell. It used `100` samples, complex hidden profiles averaging `11.44` items, and `8` interruption steps per sample.
+The latest available run here was offline because `OPENAI_API_KEY` was not set. It used `100` samples, complex hidden profiles averaging `11.44` items, and `12` generated steps per sample. In this offline run, interruption was not fixed: each generated chunk was assessed against the next hidden preference, and the simulator interrupted only when the chunk missed an unrecovered preference.
 
-Offline sanity results:
+### Summary Table
 
-- Samples: `100`
-- Interruptions: `800`
-- Average recovered profile size: `8.00` items
-- Average final recall: `0.700`
-- Median final recall: `0.688`
-- P10/P90 final recall: `0.608 / 0.796`
-- Average final precision: `1.000`
-- Average recall by step: `0.087`, `0.176`, `0.262`, `0.351`, `0.437`, `0.527`, `0.611`, `0.700`
-- Average recall by time: `0.089` at 1 min, `0.122` at 2 min, `0.370` at 5 min, `0.694` at 10 min
+| Metric | Value |
+| --- | ---: |
+| Samples | `100` |
+| Total generated steps | `1200` |
+| Interruptions | `749` |
+| Non-interruptions | `451` |
+| Mean interruptions per user | `7.49` |
+| Target profile size, mean | `11.44` items |
+| Recovered profile size, mean | `7.49` items |
+| Final recall, mean / median | `0.656 / 0.653` |
+| Final recall, P10 / P90 | `0.500 / 0.817` |
+| Final recall, min / max | `0.383 / 0.916` |
+| Final precision, mean / median | `1.000 / 1.000` |
+| Selected option actions | `587` |
+| Manual describe actions | `162` |
 
-Example hidden profile item and interruption:
+### Recovery By Step
 
-- Hidden preference: `Open paragraphs with a debatable claim rather than a broad topic sentence.`
-- Simulator interruption reason: generated text missed that hidden preference.
-- System interpretation: the interrupted sentence was under-specified relative to that preference.
-- Selected repair: revise the sentence to follow that stable preference.
-- Recovery after first step in the example: `0.101`.
+| Step | Interruptions | Average recall | Plot |
+| ---: | ---: | ---: | --- |
+| 1 | 72 | `0.062` | `██` |
+| 2 | 74 | `0.129` | `████` |
+| 3 | 72 | `0.191` | `██████` |
+| 4 | 66 | `0.251` | `████████` |
+| 5 | 79 | `0.319` | `██████████` |
+| 6 | 68 | `0.381` | `████████████` |
+| 7 | 64 | `0.435` | `██████████████` |
+| 8 | 61 | `0.489` | `████████████████` |
+| 9 | 60 | `0.543` | `██████████████████` |
+| 10 | 55 | `0.591` | `███████████████████` |
+| 11 | 43 | `0.628` | `████████████████████` |
+| 12 | 35 | `0.656` | `█████████████████████` |
+
+```mermaid
+xychart-beta
+  title "Profile Recovery By Step"
+  x-axis "Step" [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  y-axis "Average recall" 0 --> 0.7
+  line [0.062, 0.129, 0.191, 0.251, 0.319, 0.381, 0.435, 0.489, 0.543, 0.591, 0.628, 0.656]
+```
+
+### Recovery By Time
+
+| Time cap | Samples observed | Average recall | Median recall |
+| --- | ---: | ---: | ---: |
+| 1 min | 33 | `0.062` | `0.080` |
+| 2 min | 100 | `0.083` | `0.080` |
+| 5 min | 100 | `0.239` | `0.239` |
+| 10 min | 100 | `0.492` | `0.492` |
+| End of 12 steps | 100 | `0.656` | `0.653` |
+
+```mermaid
+xychart-beta
+  title "Profile Recovery By Time"
+  x-axis "Time cap" ["1m", "2m", "5m", "10m", "End"]
+  y-axis "Average recall" 0 --> 0.7
+  bar [0.062, 0.083, 0.239, 0.492, 0.656]
+```
+
+### Example Profile And Process
+
+Example user: `fake_user_001`.
+
+Partial hidden profile:
+
+- Open paragraphs with a debatable claim rather than a broad topic sentence.
+- Make each sentence connect more explicitly to the prior idea and task.
+- Avoid overusing `important` and replace it with the exact reason something matters.
+- For bioethics, prefer examples that name a concrete case, actor, or mechanism before generalizing.
+- Use more specific wording instead of broad or generic phrasing.
+- Avoid generic academic filler such as `in today's society` or `throughout history`.
+
+Example process:
+
+| Step | Time | Simulator decision | Why | Interpreter record | Recall |
+| ---: | ---: | --- | --- | --- | ---: |
+| 1 | `104.5s` | No interruption | Chunk followed the expected preference or the preference was already recovered. | No interpreter call. | `0.000` |
+| 2 | `184.3s` | No interruption | Chunk followed the expected preference or the preference was already recovered. | No interpreter call. | `0.000` |
+| 3 | `278.0s` | Interrupt | Chunk missed the hidden preference: avoid overusing `important`; name the exact reason something matters. | The interrupted sentence was under-specified relative to that hidden preference. | `0.101` |
+| 4 | `323.1s` | No interruption | Chunk followed the expected preference or the preference was already recovered. | No interpreter call. | `0.101` |
+| 5 | `406.7s` | Interrupt | Chunk missed the hidden preference: use more specific wording instead of broad phrasing. | The interrupted sentence was under-specified relative to that hidden preference. | `0.185` |
+| 6 | `472.7s` | Interrupt | Chunk missed the hidden preference: avoid generic academic filler. | The interrupted sentence was under-specified relative to that hidden preference. | `0.286` |
+
+When an interruption happens, the system records the stop point, simulator rationale, interpreter reason, selected repair, memory scope, and recovery score in the raw simulation JSON. The compact exporter keeps those fields in `interruption_audit.jsonl`.
 
 This offline run checks the recovery/reporting pipeline. It is not a real AI evaluation. Run the non-offline simulation with an API key for model-based results.
 
@@ -78,13 +145,13 @@ python -m writing_helper.web --port 8766
 Real AI simulation:
 
 ```bash
-python run_fake_profile_simulation.py --count 100 --max-steps 8
+python run_fake_profile_simulation.py --count 100 --max-steps 12
 ```
 
 Offline sanity simulation:
 
 ```bash
-python run_fake_profile_simulation.py --count 100 --max-steps 8 --offline
+python run_fake_profile_simulation.py --count 100 --max-steps 12 --offline
 ```
 
 Compact audit export:
