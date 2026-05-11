@@ -78,6 +78,9 @@ class WritingOrchestrator:
             self._busy.clear()
         self._emit("busy", value)
 
+    def _emit_timing(self, label: str, started_at: float) -> None:
+        self._emit("timing", {"label": label, "elapsed_seconds": round(time.time() - started_at, 3)})
+
     def can_start(self) -> bool:
         return not self._busy.is_set()
 
@@ -175,6 +178,7 @@ class WritingOrchestrator:
 
     async def _run_main_stream(self) -> None:
         self._set_busy(True)
+        started_at = time.time()
         try:
             self._emit("stream_mode", "main")
             self._emit("status", "Streaming main writer...")
@@ -190,8 +194,10 @@ class WritingOrchestrator:
             )
 
             if self._stop_flag.is_set():
+                self._emit_timing("main_stream_until_stop", started_at)
                 await self._prepare_replacement_options()
             else:
+                self._emit_timing("main_stream_complete", started_at)
                 self._emit("status", "Streaming finished.")
         except Exception as e:
             self._emit("error", f"{type(e).__name__}: {e}")
@@ -199,6 +205,7 @@ class WritingOrchestrator:
             self._set_busy(False)
 
     async def _prepare_replacement_options(self) -> None:
+        started_at = time.time()
         self.state.interruption_context = extract_interruption_context(self.state.live_text)
         self._emit("interruption_context", self._stop_point_payload())
         self._emit("status", "Analyzing stop point and building replacement options...")
@@ -238,9 +245,11 @@ class WritingOrchestrator:
             f"You can also choose 'Return To User Input' or 'Write My Own Replacement'. "
             f"Target options: {TARGET_REASON_OPTIONS}; current generated options: {max(0, len(options) - 2)}.",
         )
+        self._emit_timing("replacement_options_ready", started_at)
 
     async def _handle_other_flow(self, other_mode: str, other_text: str) -> None:
         self._set_busy(True)
+        started_at = time.time()
         try:
             behavior_result = await self.behavior_interpreter_agent.interpret_behavior(
                 self.state,
@@ -279,6 +288,7 @@ class WritingOrchestrator:
                     memory_update=custom_memory,
                 )
             self._emit("interpreter_result", behavior_result.to_dict())
+            self._emit_timing("custom_revision_applied", started_at)
         except Exception as e:
             self._emit("error", f"{type(e).__name__}: {e}")
         finally:
@@ -286,6 +296,7 @@ class WritingOrchestrator:
 
     async def _handle_selected_option(self, selected: ReplacementOption) -> None:
         self._set_busy(True)
+        started_at = time.time()
         try:
             key, summary = self.memory_agent.summarize_standard_reason(selected.reason_id, selected.reason)
             memory_update = ProfileUpdateSuggestion(
@@ -303,6 +314,7 @@ class WritingOrchestrator:
                 custom_input="",
                 memory_update=memory_update,
             )
+            self._emit_timing("standard_revision_applied", started_at)
         except Exception as e:
             self._emit("error", f"{type(e).__name__}: {e}")
         finally:

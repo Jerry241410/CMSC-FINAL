@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Writing Helper</title>
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <h1>Writing Helper</h1>
+          <p id="credential">No user loaded.</p>
+        </div>
+        <div class="status-strip">
+          <span id="busy" class="pill">Idle</span>
+          <span id="mode" class="pill">Mode: -</span>
+          <span id="latency" class="pill">Latency: -</span>
+        </div>
+      </section>
+
+      <section class="composer">
+        <label>
+          <span>User</span>
+          <input id="username" autocomplete="name" placeholder="jerry" />
+        </label>
+        <label class="task-field">
+          <span>Task / Purpose</span>
+          <textarea id="task" rows="3" placeholder="Draft an essay, paragraph, memo, or section..."></textarea>
+        </label>
+        <div class="actions">
+          <button id="start" class="primary">Start</button>
+          <button id="stop">Stop</button>
+          <button id="accept">Accept</button>
+          <button id="continue">Continue</button>
+          <button id="export">Export</button>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <article class="document-pane">
+          <div class="pane-title">
+            <h2>Live Document</h2>
+            <span id="status">Ready.</span>
+          </div>
+          <textarea id="document" spellcheck="true"></textarea>
+        </article>
+
+        <aside class="side-pane">
+          <section class="panel">
+            <h2>Replacement Options</h2>
+            <div id="options" class="options empty">No replacement options yet.</div>
+            <textarea id="otherText" rows="4" placeholder="Describe a revision or type your replacement..."></textarea>
+            <div class="segmented">
+              <label><input type="radio" name="otherMode" value="describe_revision" checked /> Describe</label>
+              <label><input type="radio" name="otherMode" value="write_own_text" /> Write</label>
+            </div>
+            <button id="apply" class="primary full">Apply Selected</button>
+          </section>
+
+          <section class="panel">
+            <h2>Profile Memory</h2>
+            <div id="profile" class="profile-list">No profile loaded.</div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="bottom-grid">
+        <div class="panel">
+          <h2>Interpreter</h2>
+          <pre id="interpreter"></pre>
+        </div>
+        <div class="panel">
+          <h2>Activity</h2>
+          <pre id="log"></pre>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="exportDialog">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2>Session JSON</h2>
+          <button>Close</button>
+        </div>
+        <textarea id="exportText"></textarea>
+      </form>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -80,6 +80,9 @@ class SimulationStepRecord:
     interrupted: bool
     interruption_reason: str
     interruption_point: Dict[str, Any]
+    elapsed_seconds: float = 0.0
+    cumulative_elapsed_seconds: float = 0.0
+    recovery_after_step: Dict[str, Any] = field(default_factory=dict)
     replacement_options: List[Dict[str, Any]] = field(default_factory=list)
     selected_action: str = ""
     selected_reason_id: str = ""
@@ -314,7 +317,9 @@ class HeadlessInterruptionSimulator:
         steps: List[SimulationStepRecord] = []
 
         try:
+            scenario_started_at = time.time()
             for step_index in range(1, self.max_steps + 1):
+                step_started_at = time.time()
                 generation_text = await self._generate_chunk(writer_agent, state)
                 if not generation_text.strip():
                     break
@@ -334,10 +339,13 @@ class HeadlessInterruptionSimulator:
                     steps.append(
                         SimulationStepRecord(
                             step_index=step_index,
+                            elapsed_seconds=time.time() - step_started_at,
+                            cumulative_elapsed_seconds=time.time() - scenario_started_at,
                             generation_text=generation_text,
                             interrupted=False,
                             interruption_reason=str(assessment.get("reason", "")).strip(),
                             interruption_point={},
+                            recovery_after_step=compute_profile_similarity(scenario.target_profile, state.preference_profile),
                             helper_profile_after_step=list(state.preference_profile),
                             helper_local_memory_after_step=list(state.local_preference_hints),
                             helper_observations_after_step=[asdict(item) for item in state.preference_observations],
@@ -377,10 +385,13 @@ class HeadlessInterruptionSimulator:
                 steps.append(
                     SimulationStepRecord(
                         step_index=step_index,
+                        elapsed_seconds=time.time() - step_started_at,
+                        cumulative_elapsed_seconds=time.time() - scenario_started_at,
                         generation_text=generation_text,
                         interrupted=True,
                         interruption_reason=str(assessment.get("reason", "")).strip(),
                         interruption_point=interruption_point,
+                        recovery_after_step=compute_profile_similarity(scenario.target_profile, state.preference_profile),
                         replacement_options=[asdict(item) for item in replacement_options],
                         selected_action=selected_payload["selected_action"],
                         selected_reason_id=selected_payload["selected_reason_id"],
@@ -408,6 +419,7 @@ class HeadlessInterruptionSimulator:
                 "revision_log": [asdict(event) for event in state.revision_log],
                 "steps": [asdict(step) for step in steps],
                 "final_text": state.live_text,
+                "elapsed_seconds": time.time() - scenario_started_at,
                 "similarity": similarity,
             }
         finally:
@@ -611,6 +623,8 @@ Continue the essay with exactly one academic paragraph of 4 to 6 sentences. Do n
                 "average_recall_ratio": 0.0,
                 "manual_action_count": 0,
                 "interruption_count": 0,
+                "average_elapsed_seconds": 0.0,
+                "recovery_timeline": [],
             }
 
         overlap_total = sum(item["similarity"]["overlap_word_count"] for item in results)
@@ -618,12 +632,17 @@ Continue the essay with exactly one academic paragraph of 4 to 6 sentences. Do n
         recall_total = sum(item["similarity"]["recall_ratio"] for item in results)
         manual_actions = 0
         interruption_count = 0
+        elapsed_total = sum(item.get("elapsed_seconds", 0.0) for item in results)
+        recovery_by_step: Dict[int, List[float]] = {}
         for item in results:
             for step in item["steps"]:
                 if step["interrupted"]:
                     interruption_count += 1
                 if step["selected_action"] in {"manual_describe", "manual_write"}:
                     manual_actions += 1
+                recovery = step.get("recovery_after_step", {})
+                if "recall_ratio" in recovery:
+                    recovery_by_step.setdefault(int(step.get("step_index", 0)), []).append(float(recovery["recall_ratio"]))
         count = len(results)
         return {
             "average_overlap_word_count": overlap_total / count,
@@ -631,6 +650,15 @@ Continue the essay with exactly one academic paragraph of 4 to 6 sentences. Do n
             "average_recall_ratio": recall_total / count,
             "manual_action_count": manual_actions,
             "interruption_count": interruption_count,
+            "average_elapsed_seconds": elapsed_total / count,
+            "recovery_timeline": [
+                {
+                    "step_index": step_index,
+                    "average_recall_ratio": sum(values) / len(values),
+                    "sample_count": len(values),
+                }
+                for step_index, values in sorted(recovery_by_step.items())
+            ],
         }
 
 
@@ -706,3 +734,87 @@ async def run_default_fake_profile_simulation(
     simulator = HeadlessInterruptionSimulator(model=model, max_steps=max_steps)
     path = output_path or default_simulation_output_path()
     return await simulator.run_batch(scenarios=scenarios, output_path=path)
+
+
+def run_offline_fake_profile_recovery(
+    count: int = 100,
+    seed: int = 7,
+    max_steps: int = 6,
+    output_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    scenarios = generate_fake_user_scenarios(count=count, seed=seed)
+    started_at = time.time()
+    results = []
+    rng = random.Random(seed + 1000)
+    for scenario in scenarios:
+        helper_profile: List[str] = []
+        helper_local_memory: List[str] = []
+        steps = []
+        cumulative = 0.0
+        for step_index in range(1, max_steps + 1):
+            step_elapsed = rng.uniform(25.0, 85.0)
+            cumulative += step_elapsed
+            target_item = scenario.target_profile[(step_index - 1) % len(scenario.target_profile)]
+            helper_local_memory = list(dict.fromkeys(helper_local_memory + [target_item]))
+            helper_profile = list(dict.fromkeys(helper_profile + [target_item]))
+            steps.append(
+                asdict(
+                    SimulationStepRecord(
+                        step_index=step_index,
+                        elapsed_seconds=step_elapsed,
+                        cumulative_elapsed_seconds=cumulative,
+                        generation_text=f"Offline generated paragraph for {scenario.user_id}, step {step_index}.",
+                        interrupted=True,
+                        interruption_reason="Offline deterministic recovery step; no model call was made.",
+                        interruption_point={
+                            "termination_point": "offline",
+                            "last_sentence": "",
+                            "current_sentence": "",
+                            "replacement_start": 0,
+                        },
+                        recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),
+                        selected_action="offline_profile_recovery",
+                        selected_reason_id="OFFLINE",
+                        selected_reason=target_item,
+                        selected_revision=target_item,
+                        helper_profile_after_step=list(helper_profile),
+                        helper_local_memory_after_step=list(helper_local_memory),
+                        profile_summary_added=target_item,
+                        memory_scope="offline_global",
+                    )
+                )
+            )
+        similarity = compute_profile_similarity(scenario.target_profile, helper_profile)
+        results.append(
+            {
+                "user_id": scenario.user_id,
+                "task": scenario.task,
+                "target_profile": list(scenario.target_profile),
+                "helper_profile": helper_profile,
+                "helper_local_memory": helper_local_memory,
+                "helper_observations": [],
+                "revision_log": [],
+                "steps": steps,
+                "final_text": "",
+                "elapsed_seconds": cumulative,
+                "similarity": similarity,
+            }
+        )
+
+    simulator = HeadlessInterruptionSimulator(max_steps=max_steps)
+    payload = {
+        "metadata": {
+            "scenario_count": len(scenarios),
+            "model": "offline-deterministic",
+            "max_steps": max_steps,
+            "started_at": started_at,
+            "finished_at": time.time(),
+            "note": "Offline sanity run. It does not call an AI model.",
+        },
+        "summary": simulator._build_summary(results),
+        "results": results,
+    }
+    path = output_path or default_simulation_output_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload

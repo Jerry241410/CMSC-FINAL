@@ -4,7 +4,11 @@ import json
 import os
 from pathlib import Path
 
-from writing_helper.simulation import default_simulation_output_path, run_default_fake_profile_simulation
+from writing_helper.simulation import (
+    default_simulation_output_path,
+    run_default_fake_profile_simulation,
+    run_offline_fake_profile_recovery,
+)
 
 
 def main() -> None:
@@ -14,7 +18,19 @@ def main() -> None:
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="Model name for helper and judge agents.")
     parser.add_argument("--max-steps", type=int, default=6, help="Maximum interruption cycles per fake user.")
     parser.add_argument("--output", type=Path, default=None, help="Path to save the raw simulation JSON.")
+    parser.add_argument("--offline", action="store_true", help="Run deterministic offline recovery without OpenAI calls.")
     args = parser.parse_args()
+
+    if args.offline:
+        output_path = args.output or default_simulation_output_path()
+        payload = run_offline_fake_profile_recovery(
+            count=args.count,
+            seed=args.seed,
+            max_steps=args.max_steps,
+            output_path=output_path,
+        )
+        print(json.dumps({"output_path": str(output_path), "summary": payload["summary"]}, ensure_ascii=False, indent=2))
+        return
 
     if not os.getenv("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY is not set. Set it before running the simulation.")

@@ -1,7 +1,6 @@
 import os
-import tkinter as tk
 
-from .ui import WritingHelperApp
+from .web import run_web_app
 
 
 def main() -> None:
@@ -10,6 +9,4 @@ def main() -> None:
             "OPENAI_API_KEY is not set. Set it in your environment before running this script."
         )
 
-    root = tk.Tk()
-    WritingHelperApp(root)
-    root.mainloop()
+    run_web_app()

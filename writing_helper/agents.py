@@ -922,5 +922,5 @@ Current live text:
 {state.live_text}
 
 Instruction:
-Continue the writing as streaming prose based on the user's description of task, saved profile, and local passage preferences.
+Continue the writing with one focused paragraph of 3 to 5 sentences. Start exactly where the current text leaves off, follow the saved profile and local passage preferences, and do not explain your process.
 """

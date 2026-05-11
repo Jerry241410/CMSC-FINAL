@@ -1,12 +1,12 @@
 # Writing Helper
 
-This project is a Tkinter desktop prototype for interruption-aware AI writing. It streams draft text, lets the user stop when a sentence goes off track, interprets why the stop likely happened, proposes local rewrites, and saves the user's emerging preferences into a per-user local profile.
+This project is a local browser-based prototype for interruption-aware AI writing. It streams draft text, lets the user stop when a sentence goes off track, interprets why the stop likely happened, proposes local rewrites, and saves the user's emerging preferences into a per-user local profile.
 
 ## What We Have Now
 
 ### Core app flow
 
-- `python writing.py` launches the desktop app.
+- `python writing.py` launches the local web app at `http://127.0.0.1:8765`.
 - The user enters a `User Name` and a `Task / Purpose`.
 - The main writer streams text into the live document view.
 - The user can stop generation at any point.
@@ -23,7 +23,7 @@ This project is a Tkinter desktop prototype for interruption-aware AI writing. I
 
 ### Current UI
 
-The Tkinter UI currently includes:
+The web UI currently includes:
 
 - username input
 - task/purpose input
@@ -136,8 +136,6 @@ Install the packages currently used by the code:
 pip install -U "autogen-agentchat" "autogen-ext[openai]" openai
 ```
 
-`tkinter` is also required. It is included in many Python installations.
-
 Recommended Python version:
 
 
@@ -169,6 +167,12 @@ export OPENAI_API_KEY="your_key_here"
 python writing.py
 ```
 
+Or choose a port explicitly:
+
+```bash
+python -m writing_helper.web --port 8766
+```
+
 ## Headless Simulation
 
 Run the fake-profile batch simulation:
@@ -177,10 +181,18 @@ Run the fake-profile batch simulation:
 python run_fake_profile_simulation.py --count 100 --max-steps 6
 ```
 
-This writes a raw simulation JSON file under `simulation_outputs/`.
+This writes a raw simulation JSON file under `simulation_outputs/`. It requires `OPENAI_API_KEY`.
+
+For a no-API-key sanity check of the scenario and reporting pipeline:
+
+```bash
+python run_fake_profile_simulation.py --count 100 --max-steps 6 --offline
+```
 
 Export flattened interruption logs plus a blank report scaffold from that raw file:
 
 ```bash
 python export_simulation_report.py simulation_outputs/your_run.json
 ```
+
+The report includes step-level profile recovery plus recovery at 30 seconds, 1 minute, 2 minutes, 5 minutes, and 10 minutes when timing data is available.
