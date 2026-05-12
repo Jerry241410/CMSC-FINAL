@@ -71,19 +71,6 @@ Most common exact profile items:
 | Support abstract points with concrete examples when needed. | `33%` |
 | Avoid generic academic filler. | `29%` |
 
-| Run metric | Value |
-| --- | ---: |
-| Samples | `100` |
-| Total generated steps | `3000` |
-| Interruptions | `2486` |
-| Non-interruptions | `514` |
-| Mean interruptions per user | `24.86` |
-| Promoted preferences | `500` |
-| Local-only observations | `1986` |
-| Final precision, mean / median | `1.000 / 1.000` |
-| Selected option actions | `1974` |
-| Manual describe actions | `512` |
-
 ### Recovery Rate Line Plot
 
 ![Average recovery rate line plot](docs/avg_recovery_rate_line_plot.svg)
