@@ -17,6 +17,7 @@ from .agents import (
     StatelessLLMAgent,
     StreamingWriterAgent,
 )
+from .constants import PREFERENCE_PROMOTION_THRESHOLD
 from .models import ProfileUpdateSuggestion, ReplacementOption, RevisionEvent, SessionState
 from .text_utils import extract_interruption_context, extract_json_object
 
@@ -1033,9 +1034,6 @@ def _domain_material(topic: str) -> Dict[str, List[str]]:
         "evidence": [f"Comparative evidence helps separate plausible claims from broad assertion in {topic}."],
         "counterarguments": [f"critics can argue that the evidence is incomplete or context-dependent."],
     })
-    if satisfies_profile:
-        return _offline_style_aligned_passage(topic, step_index, profile_item)
-    return _offline_style_mismatch_passage(topic, step_index)
 
 
 def _offline_bioethics_passage(step_index: int, profile_item: str, satisfies_profile: bool) -> str:
@@ -1397,6 +1395,156 @@ def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dic
     ]
 
 
+def _offline_writing_fill_options(
+    target_item: str,
+    scenario: FakeUserScenario,
+    rng: random.Random,
+) -> List[Dict[str, Any]]:
+    options = [
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "STYLE_SPECIFICITY",
+            "reason": "Make the passage more specific and less generic.",
+            "explanation": "Tightens vague wording and makes the claim easier to evaluate.",
+            "replacement_text": "Revise the passage with more specific wording and a clearer claim.",
+            "option_kind": "reason",
+            "category": "writing_fill",
+            "preference_summary": "Use more specific wording instead of broad or generic phrasing.",
+        },
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "STRUCTURE_TRANSITION",
+            "reason": "Improve the argumentative transition.",
+            "explanation": "Connects the passage more clearly to the prior idea and the essay task.",
+            "replacement_text": "Revise the passage so each sentence connects more explicitly to the prior idea and task.",
+            "option_kind": "reason",
+            "category": "writing_fill",
+            "preference_summary": "Make each sentence connect more explicitly to the prior idea and task.",
+        },
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "STYLE_MECHANISM",
+            "reason": "Explain the mechanism behind the claim.",
+            "explanation": "Adds causal or institutional reasoning instead of only naming the issue.",
+            "replacement_text": "Revise the passage so it explains the mechanism or reasoning behind the claim.",
+            "option_kind": "reason",
+            "category": "writing_fill",
+            "preference_summary": "Explain the mechanism or reasoning behind important claims.",
+        },
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "STYLE_CONCISE",
+            "reason": "Make the prose clearer and more concise.",
+            "explanation": "Reduces padding while keeping the passage analytical.",
+            "replacement_text": "Revise the passage with clearer, lighter, and more concise sentences.",
+            "option_kind": "reason",
+            "category": "writing_fill",
+            "preference_summary": "Prefer clearer, lighter, and more concise sentences.",
+        },
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "STRUCTURE_CLAIM",
+            "reason": "Open with a debatable claim.",
+            "explanation": "Replaces a broad topic opening with a claim the paragraph can develop.",
+            "replacement_text": "Revise the passage so the paragraph opens with a debatable claim rather than a broad topic sentence.",
+            "option_kind": "reason",
+            "category": "writing_fill",
+            "preference_summary": "Open paragraphs with a debatable claim rather than a broad topic sentence.",
+        },
+    ]
+    if rng.random() < 0.75:
+        options.insert(
+            rng.randrange(0, len(options) + 1),
+            {
+                "option_id": str(uuid.uuid4()),
+                "reason_id": "MATCHED_LATENT_STYLE",
+                "reason": f"Match the user's latent style preference: {target_item}",
+                "explanation": "This option most directly fits the simulated user's hidden writing preference.",
+                "replacement_text": f"Revise the passage so it follows this writing preference: {target_item}",
+                "option_kind": "reason",
+                "category": "writing_fill",
+                "preference_summary": target_item,
+            },
+        )
+    options.append(
+        {
+            "option_id": str(uuid.uuid4()),
+            "reason_id": "OTHER",
+            "reason": "None of these fit.",
+            "explanation": "The simulated user can provide a custom preference if no generated option satisfies them.",
+            "replacement_text": "",
+            "option_kind": "other_describe",
+            "category": "custom",
+            "preference_summary": "",
+        }
+    )
+    return options
+
+
+def _offline_choose_writing_fill(
+    target_item: str,
+    options: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    exact = next((item for item in options if item.get("preference_summary") == target_item), None)
+    if exact is not None:
+        return {
+            "selected_action": "select_option",
+            "selected_option": exact,
+            "manual_input": "",
+            "rationale": "The simulator selected the writing-fill option that matched its hidden style preference.",
+        }
+    return {
+        "selected_action": "manual_describe",
+        "selected_option": next(item for item in options if item.get("reason_id") == "OTHER"),
+        "manual_input": target_item,
+        "rationale": "No writing-fill option matched the hidden preference, so the simulator stated what it wanted.",
+    }
+
+
+def _offline_interpret_selected_feedback(
+    selected_option: Dict[str, Any],
+    manual_input: str,
+    target_item: str,
+    interruption_point: Dict[str, Any],
+) -> Dict[str, Any]:
+    summary = manual_input.strip() or str(selected_option.get("preference_summary", "")).strip() or target_item
+    source = "custom request" if manual_input.strip() else "selected writing-fill option"
+    return {
+        "stop_point": interruption_point,
+        "likely_user_intent": f"The user preference is inferred from the {source}: {summary}",
+        "reason_candidates": [
+            {
+                "id": str(selected_option.get("reason_id", "SELECTED_FEEDBACK")),
+                "reason": f"The selected feedback indicates this reusable writing preference: {summary}",
+            }
+        ],
+        "replacement_guidance": {
+            "goal": f"Revise future passages to reflect: {summary}",
+            "desired_properties": [summary, "preserve the essay's content", "apply only after repeated evidence"],
+            "avoid": ["treating one isolated click as a stable global preference"],
+        },
+        "profile_update": {
+            "preference_summary": summary,
+            "confidence": 0.72,
+            "preference_key": _profile_key(summary),
+            "scope": "local_until_repeated",
+            "rationale": f"Interpreted from the {source}; promoted only after repeated similar selections.",
+        },
+    }
+
+
+def _offline_record_preference_observation(
+    observations: Dict[str, Dict[str, Any]],
+    summary: str,
+) -> tuple[List[Dict[str, Any]], int]:
+    key = _profile_key(summary)
+    current = observations.get(key, {"key": key, "summary": summary, "count": 0})
+    current["count"] = int(current.get("count", 0)) + 1
+    current["summary"] = summary
+    observations[key] = current
+    return list(observations.values()), int(current["count"])
+
+
 def _profile_key(text: str) -> str:
     cleaned = "".join(ch.lower() if ch.isalnum() else "_" for ch in text).strip("_")
     while "__" in cleaned:
@@ -1424,6 +1572,7 @@ def run_offline_fake_profile_recovery(
     for scenario in scenarios:
         helper_profile: List[str] = []
         helper_local_memory: List[str] = []
+        observation_map: Dict[str, Dict[str, Any]] = {}
         steps = []
         cumulative = 0.0
         for step_index in range(1, max_steps + 1):
@@ -1469,29 +1618,39 @@ def run_offline_fake_profile_recovery(
                             interruption_reason=assessment["reason"],
                             interruption_point=interruption_point,
                             simulator_confidence=assessment["confidence"],
-                        simulator_decision_rationale=(
-                            "The generated passage satisfied the expected style preference or the preference was already recovered."
-                        ),
+                            simulator_decision_rationale=(
+                                "The generated passage satisfied the expected style preference or the preference was already recovered."
+                            ),
                             recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),
                             helper_profile_after_step=list(helper_profile),
                             helper_local_memory_after_step=list(helper_local_memory),
+                            helper_observations_after_step=list(observation_map.values()),
                             memory_scope="offline_no_update",
                         )
                     )
                 )
                 continue
 
-            system_interpretation = _offline_system_interpretation(
-                scenario=scenario,
-                step_index=step_index,
+            replacement_options = _offline_writing_fill_options(target_item, scenario, rng)
+            selected_payload = _offline_choose_writing_fill(target_item, replacement_options)
+            selected_option = selected_payload["selected_option"]
+            selected_action = selected_payload["selected_action"]
+            manual_input = selected_payload["manual_input"]
+            inferred_summary = manual_input or str(selected_option.get("preference_summary", "")).strip() or target_item
+            system_interpretation = _offline_interpret_selected_feedback(
+                selected_option=selected_option,
+                manual_input=manual_input,
                 target_item=target_item,
-                missed_item=target_item,
                 interruption_point=interruption_point,
             )
-            replacement_options = _offline_replacement_options(target_item, target_item)
-            helper_local_memory = list(dict.fromkeys(helper_local_memory + [target_item]))
-            helper_profile = list(dict.fromkeys(helper_profile + [target_item]))
-            selected_action = "select_option" if step_index % 4 else "manual_describe"
+            helper_local_memory = list(dict.fromkeys(helper_local_memory + [inferred_summary]))
+            observations_after, count_after = _offline_record_preference_observation(observation_map, inferred_summary)
+            promoted_summary = ""
+            memory_scope = "offline_local_observation"
+            if count_after >= PREFERENCE_PROMOTION_THRESHOLD and inferred_summary not in helper_profile:
+                helper_profile = list(dict.fromkeys(helper_profile + [inferred_summary]))
+                promoted_summary = inferred_summary
+                memory_scope = "offline_promoted_global"
             steps.append(
                 asdict(
                     SimulationStepRecord(
@@ -1504,20 +1663,21 @@ def run_offline_fake_profile_recovery(
                         interruption_point=interruption_point,
                         simulator_confidence=assessment["confidence"],
                         simulator_decision_rationale=(
-                            f"The passage missed an unrecovered wording/style/structure preference; repair stores: {target_item}"
+                            f"The passage missed a writing preference; simulator chose feedback and interpreter inferred: {inferred_summary}"
                         ),
                         system_interpretation=system_interpretation,
                         recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),
                         replacement_options=replacement_options,
                         selected_action=selected_action,
-                        selected_reason_id=replacement_options[0]["reason_id"],
-                        selected_reason=replacement_options[0]["reason"],
-                        selected_revision=replacement_options[0]["replacement_text"],
-                        manual_input=target_item if selected_action == "manual_describe" else "",
+                        selected_reason_id=selected_option["reason_id"],
+                        selected_reason=selected_option["reason"],
+                        selected_revision=selected_option.get("replacement_text", "") or manual_input,
+                        manual_input=manual_input,
                         helper_profile_after_step=list(helper_profile),
                         helper_local_memory_after_step=list(helper_local_memory),
-                        profile_summary_added=target_item,
-                        memory_scope="offline_global",
+                        helper_observations_after_step=observations_after,
+                        profile_summary_added=promoted_summary,
+                        memory_scope=memory_scope,
                     )
                 )
             )
@@ -1529,7 +1689,7 @@ def run_offline_fake_profile_recovery(
                 "target_profile": list(scenario.target_profile),
                 "helper_profile": helper_profile,
                 "helper_local_memory": helper_local_memory,
-                "helper_observations": [],
+                "helper_observations": list(observation_map.values()),
                 "revision_log": [],
                 "steps": steps,
                 "final_text": "",
