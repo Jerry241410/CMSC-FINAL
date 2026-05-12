@@ -23,23 +23,38 @@ Local browser prototype for interruption-aware AI writing. The app streams a dra
 
 The code includes fake-profile recovery simulation in `writing_helper/simulation.py`. The real AI path asks a profile-satisfaction simulator to interrupt only when the latest generation misses, contradicts, or ignores the hidden user profile.
 
-The latest available run here was offline because `OPENAI_API_KEY` was not set. It used `100` samples, style-only hidden profiles, and `12` generated paragraph steps per sample. Interruption was decision-based: each generated passage was assessed against the next hidden wording/style/structure preference, and the simulator interrupted only when the passage missed an unrecovered preference.
-
-`P10` means the 10th percentile: 10% of profiles/runs were at or below that value. `P90` means the 90th percentile: 90% were at or below that value.
+The latest available run here was offline because `OPENAI_API_KEY` was not set. It used `100` samples, style-only hidden profiles, and `12` generated passage steps per sample. Interruption was decision-based: each generated passage was assessed against a hidden wording/style/structure preference, and the simulator interrupted only when the passage missed an unrecovered preference.
 
 ### Summary Statistics
 
-| Metric | Mean | Median | Min | Max | P10 | P90 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Target profile items | `10.47` | `10.00` | `9` | `12` | `9.00` | `12.00` |
-| Target profile words | `104.64` | `103.00` | `82` | `125` | `91.00` | `121.00` |
-| Unique words per profile | `80.15` | `81.00` | `65` | `92` | `71.00` | `88.00` |
-| Duplicate word count | `24.49` | `23.00` | `10` | `41` | `17.80` | `33.00` |
-| Duplicate word ratio | `0.231` | `0.225` | `0.110` | `0.333` | `0.179` | `0.282` |
-| Recovered profile items | `7.75` | `8.00` | `5` | `11` | `6.00` | `9.00` |
-| Final recall | `0.743` | `0.749` | `0.516` | `1.000` | `0.622` | `0.890` |
+| Metric | Mean | Median | Min | Max |
+| --- | ---: | ---: | ---: | ---: |
+| Target profile items | `10.47` | `10.00` | `9` | `12` |
+| Target profile words | `102.32` | `102.50` | `79` | `125` |
+| Unique words per profile | `78.22` | `78.00` | `63` | `92` |
+| Duplicate word count | `24.10` | `23.00` | `9` | `41` |
+| Duplicate word ratio | `0.233` | `0.228` | `0.108` | `0.333` |
+| Recovered profile items | `7.75` | `8.00` | `5` | `11` |
+| Final recall | `0.742` | `0.751` | `0.516` | `1.000` |
 
 Most frequent words across generated profiles: `the` 458, `and` 247, `avoid` 230, `with` 228, `a` 222, `to` 217, `use` 208, `more` 186, `prefer` 178, `keep` 174, `or` 170, `when` 163.
+
+Most common exact profile items:
+
+| Exact profile item | Profiles containing it |
+| --- | ---: |
+| Keep wording flexible enough to avoid sounding overly narrow too early. | `51%` |
+| Use a brief opposing idea or contrast when it strengthens the point. | `43%` |
+| Use more specific wording instead of broad or generic phrasing. | `41%` |
+| Prefer clearer, lighter, and more concise sentences. | `41%` |
+| Avoid repetition and let each sentence make a fresh move. | `40%` |
+| Keep the tone aligned with the intended voice of the piece. | `39%` |
+| State the core claim more precisely and with a more refined point. | `35%` |
+| Make each sentence connect more explicitly to the prior idea and task. | `34%` |
+| Explain the mechanism or reasoning behind important claims. | `34%` |
+| Use one governing idea per paragraph and subordinate examples to that idea. | `33%` |
+| Support abstract points with concrete examples when needed. | `33%` |
+| Avoid generic academic filler. | `29%` |
 
 | Run metric | Value |
 | --- | ---: |
@@ -74,18 +89,18 @@ Black-line plot by step:
 
 | Step | Interruptions | Average recall |
 | ---: | ---: | ---: |
-| 1 | 79 | `0.084` |
-| 2 | 73 | `0.162` |
-| 3 | 73 | `0.243` |
-| 4 | 66 | `0.308` |
-| 5 | 77 | `0.383` |
-| 6 | 69 | `0.458` |
-| 7 | 63 | `0.524` |
-| 8 | 59 | `0.583` |
+| 1 | 86 | `0.083` |
+| 2 | 82 | `0.162` |
+| 3 | 82 | `0.244` |
+| 4 | 71 | `0.310` |
+| 5 | 78 | `0.384` |
+| 6 | 78 | `0.459` |
+| 7 | 69 | `0.525` |
+| 8 | 60 | `0.582` |
 | 9 | 63 | `0.645` |
-| 10 | 51 | `0.687` |
-| 11 | 39 | `0.721` |
-| 12 | 30 | `0.743` |
+| 10 | 46 | `0.688` |
+| 11 | 37 | `0.722` |
+| 12 | 23 | `0.742` |
 
 Black-line plot by time:
 
@@ -108,11 +123,11 @@ Black-line plot by time:
 
 | Time cap | Samples observed | Average recall | Median recall |
 | --- | ---: | ---: | ---: |
-| 1 min | 33 | `0.077` | `0.089` |
-| 2 min | 100 | `0.107` | `0.101` |
-| 5 min | 100 | `0.296` | `0.294` |
-| 10 min | 100 | `0.586` | `0.582` |
-| End of 12 steps | 100 | `0.743` | `0.749` |
+| 1 min | 33 | `0.079` | `0.089` |
+| 2 min | 100 | `0.106` | `0.100` |
+| 5 min | 100 | `0.298` | `0.296` |
+| 10 min | 100 | `0.587` | `0.582` |
+| End of 12 steps | 100 | `0.742` | `0.751` |
 
 ### Fully Demonstrated Example
 
@@ -122,7 +137,7 @@ Task: `Draft a research-style essay on the major debates in bioethics, with atte
 
 Full hidden profile, limited to wording style, writing style, and structural preferences:
 
-1. Avoid generic academic filler such as `in today's society` or `throughout history`.
+1. Avoid generic academic filler.
 2. Favor conceptual synthesis over listing disconnected claims.
 3. Make each sentence connect more explicitly to the prior idea and task.
 4. Use cautious qualifiers only when they clarify uncertainty, not as padding.
@@ -133,26 +148,26 @@ Full hidden profile, limited to wording style, writing style, and structural pre
 9. Explain the mechanism or reasoning behind important claims.
 10. Keep sentence rhythm varied: short claim, longer explanation, concise implication.
 
-Legend: <span style="color:red">●</span> interruption point; <mark>yellow</mark> chosen repair.
+Legend: <span style="color:red">&#9679;</span> interruption point; <mark>yellow</mark> chosen repair.
 
 | Step | Time | Generated text | Simulator decision | Interpreter record | Recorded memory | Recall |
 | ---: | ---: | --- | --- | --- | --- | ---: |
-| 1 | `104.5s` | <span style="color:red">●</span> Paragraph 1 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage is fluent but misses the unrecovered writing-style preference to avoid generic academic filler. | The interrupted passage is under-specified relative to the hidden writing-style preference. | <mark>Revise the passage so it avoids generic academic filler such as `in today's society` or `throughout history`.</mark> Stored as `offline_global`. | `0.117` |
-| 2 | `184.3s` | Paragraph 2 begins by naming its relation to the prior point. Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. The transition carries the argument forward instead of simply adding another topic. | No interruption. The passage satisfied the expected structural preference. | No interpreter call. | No update. | `0.117` |
-| 3 | `278.0s` | <span style="color:red">●</span> Paragraph 3 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to connect each sentence more explicitly to the prior idea and task. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so each sentence connects more explicitly to the prior idea and task.</mark> Stored as `offline_global`. | `0.233` |
-| 4 | `323.1s` | Paragraph 4 keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The paragraph's style remains readable while still carrying argumentative weight. | No interruption. The passage was acceptable for the expected style preference. | No interpreter call. | No update. | `0.233` |
-| 5 | `406.7s` | <span style="color:red">●</span> Paragraph 5 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to open paragraphs with a debatable claim rather than a broad topic sentence. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so the paragraph opens with a debatable claim rather than a broad topic sentence.</mark> Stored as `offline_global`. | `0.350` |
-| 6 | `472.7s` | <span style="color:red">●</span> Paragraph 6 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to avoid vague intensifiers and let logic carry emphasis. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so emphasis comes from sentence logic rather than vague intensifiers.</mark> Stored as `offline_global`. | `0.447` |
-| 7 | `581.4s` | <span style="color:red">●</span> Paragraph 7 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference for more specific wording instead of broad or generic phrasing. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage with more specific wording instead of broad or generic phrasing.</mark> Stored as `offline_global`. | `0.544` |
-| 8 | `646.5s` | <span style="color:red">●</span> Paragraph 8 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to keep wording flexible enough to avoid sounding overly narrow too early. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so the wording stays flexible before narrowing the claim.</mark> Stored as `offline_global`. | `0.650` |
-| 9 | `757.4s` | Paragraph 9 explains the mechanism behind the claim. The reader can see how a change in incentives alters interpretation, then how that altered interpretation changes the evidence a writer can use. The paragraph therefore gives a reason, not just a conclusion. | No interruption. The passage satisfied the expected mechanism preference. | No interpreter call. | No update. | `0.650` |
-| 10 | `792.8s` | Paragraph 10 uses a compact rhythm. A short claim sets the direction; a longer sentence explains the pressure behind it. The final sentence lands cleanly. | No interruption. The passage satisfied the expected rhythm preference. | No interpreter call. | No update. | `0.650` |
-| 11 | `876.3s` | Paragraph 11 keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The paragraph's style remains readable while still carrying argumentative weight. | No interruption. The passage was acceptable. | No interpreter call. | No update. | `0.650` |
-| 12 | `989.0s` | Paragraph 12 begins by naming its relation to the prior point. Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. The transition carries the argument forward instead of simply adding another topic. | No interruption. The passage was acceptable. | No interpreter call. | No update. | `0.650` |
+| 1 | `104.5s` | <span style="color:red">&#9679;</span> The essay opens by saying that bioethics is complex and widely debated. It gestures toward evidence, values, and institutions, but it does not yet state a contestable claim. The paragraph feels smooth while leaving the reader unsure what kind of argument will follow. | Interrupt: the passage is fluent but misses `Avoid generic academic filler.` | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so it follows: Avoid generic academic filler.</mark> Stored as `offline_global`. | `0.042` |
+| 2 | `184.3s` | The next passage begins by naming its relation to the prior point. Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. The transition carries the argument forward instead of simply adding another topic. | No interruption. The passage satisfied the expected transition/connection preference. | No interpreter call. | No update. | `0.042` |
+| 3 | `278.0s` | <span style="color:red">&#9679;</span> The draft then notes that different approaches can produce different outcomes. It treats this point as important without explaining what changes, who is affected, or why the distinction matters. As a result, the paragraph sounds plausible but thin. | Interrupt: the passage misses `Make each sentence connect more explicitly to the prior idea and task.` | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so it follows: Make each sentence connect more explicitly to the prior idea and task.</mark> Stored as `offline_global`. | `0.168` |
+| 4 | `323.1s` | The passage keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The style remains readable while still carrying argumentative weight. | No interruption. The passage was acceptable for the expected style preference. | No interpreter call. | No update. | `0.168` |
+| 5 | `406.7s` | <span style="color:red">&#9679;</span> The draft tries to transition into a new section by announcing another aspect of bioethics. It names the topic but not the argumentative pressure behind it. The reader receives a new heading in sentence form rather than a developed turn in the essay. | Interrupt: the passage misses `Open paragraphs with a debatable claim rather than a broad topic sentence.` | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so it follows: Open paragraphs with a debatable claim rather than a broad topic sentence.</mark> Stored as `offline_global`. | `0.295` |
+| 6 | `472.7s` | <span style="color:red">&#9679;</span> The essay next claims that evidence should be balanced with caution. Yet it does not explain what kind of evidence carries the most weight or how caution changes the claim. The result is orderly, but the paragraph remains too general to guide revision. | Interrupt: the passage misses `Avoid vague intensifiers and let the sentence's logic carry emphasis.` | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so it follows: Avoid vague intensifiers and let the sentence's logic carry emphasis.</mark> Stored as `offline_global`. | `0.400` |
+| 7 | `581.4s` | <span style="color:red">&#9679;</span> The passage introduces a possible objection and then moves past it quickly. It says critics may disagree, but it does not give their concern enough shape to test the main argument. The prose gestures toward contrast without making the contrast do analytical work. | Interrupt: the passage misses `Use more specific wording instead of broad or generic phrasing.` | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so it follows: Use more specific wording instead of broad or generic phrasing.</mark> Stored as `offline_global`. | `0.505` |
+| 8 | `646.5s` | <span style="color:red">&#9679;</span> The draft describes bioethics as a field with practical and theoretical stakes. It joins those stakes with smooth connective phrases, but the sentences do not clearly depend on one another. The paragraph reads like adjacent observations rather than a single developing claim. | Interrupt: the passage misses `Keep wording flexible enough to avoid sounding overly narrow too early.` | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so it follows: Keep wording flexible enough to avoid sounding overly narrow too early.</mark> Stored as `offline_global`. | `0.621` |
+| 9 | `757.4s` | The paragraph explains the mechanism behind the claim. The reader can see how a change in incentives alters interpretation, then how that altered interpretation changes the evidence a writer can use. The paragraph therefore gives a reason, not just a conclusion. | No interruption. The passage satisfied the expected mechanism preference. | No interpreter call. | No update. | `0.621` |
+| 10 | `792.8s` | The paragraph uses a compact rhythm. A short claim sets the direction; a longer sentence explains the pressure behind it. The final sentence lands cleanly. | No interruption. The passage satisfied the expected rhythm preference. | No interpreter call. | No update. | `0.621` |
+| 11 | `876.3s` | The passage keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The style remains readable while still carrying argumentative weight. | No interruption. The passage was acceptable. | No interpreter call. | No update. | `0.621` |
+| 12 | `989.0s` | The next passage begins by naming its relation to the prior point. Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. The transition carries the argument forward instead of simply adding another topic. | No interruption. The passage was acceptable. | No interpreter call. | No update. | `0.621` |
 
 Recovered helper profile for this example:
 
-1. Avoid generic academic filler such as `in today's society` or `throughout history`.
+1. Avoid generic academic filler.
 2. Make each sentence connect more explicitly to the prior idea and task.
 3. Open paragraphs with a debatable claim rather than a broad topic sentence.
 4. Avoid vague intensifiers and let the sentence's logic carry emphasis.

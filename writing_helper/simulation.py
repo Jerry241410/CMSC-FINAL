@@ -72,7 +72,7 @@ STRUCTURAL_PREFERENCE_POOL = [
 
 VOICE_PREFERENCE_POOL = [
     "Write with restrained confidence rather than dramatic emphasis.",
-    "Avoid generic academic filler such as 'in today's society' or 'throughout history'.",
+    "Avoid generic academic filler.",
     "Prefer precise verbs over nominalized phrases when possible.",
     "Use cautious qualifiers only when they clarify uncertainty, not as padding.",
     "Keep the prose analytical but readable for an interdisciplinary audience.",
@@ -783,7 +783,12 @@ async def run_default_fake_profile_simulation(
 
 
 def _offline_previous_sentence(scenario: FakeUserScenario, step_index: int) -> str:
-    return f"Paragraph {step_index} develops the essay's argument about {scenario.task.split(' in ')[-1].rstrip('.')}."
+    return _offline_generation_for_step(
+        scenario=scenario,
+        step_index=max(1, step_index - 1),
+        profile_item="",
+        satisfies_profile=True,
+    )
 
 
 def _offline_current_sentence(
@@ -803,7 +808,7 @@ def _offline_generation_for_step(
     profile_item: str,
     satisfies_profile: bool,
 ) -> str:
-    topic = scenario.task.split(" in ")[-1].rstrip(".")
+    topic = _topic_label(scenario.task)
     if satisfies_profile:
         return _offline_style_aligned_passage(topic, step_index, profile_item)
     return _offline_style_mismatch_passage(topic, step_index)
@@ -813,71 +818,129 @@ def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: st
     lowered = profile_item.lower()
     if "repetition" in lowered or "fresh move" in lowered:
         return (
-            f"Paragraph {step_index} shifts the argument rather than restating the opening claim. "
-            f"It shows how the debate changes once evidence, method, and reader expectation start pulling in different directions. "
-            f"That turn gives the paragraph a new job instead of recycling the same point in slightly different words."
+            f"The draft now shifts from naming the debate in {topic} to asking what the debate changes for the reader. "
+            f"Evidence, method, and interpretation pull in different directions, so the paragraph makes a new argumentative move. "
+            f"That turn prevents the essay from circling the same claim in different words."
         )
     if "specific" in lowered or "precise" in lowered or "vague" in lowered:
         return (
-            f"Paragraph {step_index} replaces broad language with sharper terms: evidence becomes trial data, caution becomes uncertainty about scope, and impact becomes a change in what the argument can prove. "
+            f"The revision replaces broad language with sharper terms: evidence becomes traceable data, caution becomes uncertainty about scope, and impact becomes a limit on what the argument can prove. "
             f"Those concrete words make the claim easier to test. "
             f"The prose therefore sounds less inflated and more accountable."
         )
     if "tone" in lowered or "measured" in lowered or "restrained" in lowered or "qualification" in lowered:
         return (
-            f"Paragraph {step_index} advances the claim with restraint. "
+            f"The paragraph advances the claim with restraint. "
             f"It suggests that the evidence points in a useful direction, while leaving room for limits in method and context. "
             f"The result is confident without becoming overstated."
         )
     if "example" in lowered or "concrete" in lowered or "tradeoff" in lowered:
         return (
-            f"Paragraph {step_index} anchors the abstract claim in a concrete case. "
-            f"A policy may improve consistency, for example, while also narrowing professional judgment in borderline situations. "
+            f"The paragraph anchors the abstract claim in a concrete case. "
+            f"A rule may improve consistency while also narrowing judgment in borderline situations. "
             f"That tradeoff makes the argument visible rather than merely decorative."
         )
     if "mechanism" in lowered or "causal" in lowered or "reasoning" in lowered:
         return (
-            f"Paragraph {step_index} explains the mechanism behind the claim. "
+            f"The paragraph explains the mechanism behind the claim. "
             f"The reader can see how a change in incentives alters interpretation, then how that altered interpretation changes the evidence a writer can use. "
             f"The paragraph therefore gives a reason, not just a conclusion."
         )
     if "transition" in lowered or "connect" in lowered or "logical relation" in lowered:
         return (
-            f"Paragraph {step_index} begins by naming its relation to the prior point. "
+            f"The next passage begins by naming its relation to the prior point. "
             f"Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. "
             f"The transition carries the argument forward instead of simply adding another topic."
         )
     if "counter" in lowered or "opposing" in lowered or "objections" in lowered:
         return (
-            f"Paragraph {step_index} gives the opposing view enough force to matter. "
+            f"The paragraph gives the opposing view enough force to matter. "
             f"A skeptical reader might accept the evidence but reject the inference drawn from it. "
             f"By answering that pressure directly, the paragraph makes the main claim more credible."
         )
     if "paragraph" in lowered or "structure" in lowered or "topic sentence" in lowered or "one governing idea" in lowered:
         return (
-            f"Paragraph {step_index} opens with a debatable claim rather than a topic label. "
+            f"The paragraph opens with a debatable claim rather than a topic label. "
             f"Each following sentence tests or qualifies that claim instead of wandering into a list. "
             f"The paragraph closes by sharpening the implication for the larger essay."
         )
     if "concise" in lowered or "compact" in lowered or "rhythm" in lowered:
         return (
-            f"Paragraph {step_index} uses a compact rhythm. "
+            f"The paragraph uses a compact rhythm. "
             f"A short claim sets the direction; a longer sentence explains the pressure behind it. "
             f"The final sentence lands cleanly."
         )
     return (
-        f"Paragraph {step_index} keeps the prose analytical and controlled. "
+        f"The passage keeps the prose analytical and controlled. "
         f"It states a claim, explains why the claim matters, and avoids drifting into generic summary. "
-        f"The paragraph's style remains readable while still carrying argumentative weight."
+        f"The style remains readable while still carrying argumentative weight."
     )
 
 
 def _offline_style_mismatch_passage(topic: str, step_index: int) -> str:
-    return (
-        f"Paragraph {step_index} discusses {topic} in a broad way. "
-        f"It says the issue is important and has many implications for scholars, practitioners, and society. "
-        f"The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn."
-    )
+    templates = [
+        (
+            f"The essay opens by saying that {topic} is complex and widely debated. "
+            f"It gestures toward evidence, values, and institutions, but it does not yet state a contestable claim. "
+            f"The paragraph feels smooth while leaving the reader unsure what kind of argument will follow."
+        ),
+        (
+            f"The next passage adds that scholars disagree about {topic} for many reasons. "
+            f"It mentions uncertainty, public concern, and the need for further analysis. "
+            f"Those phrases keep the draft moving, but they also flatten the prose into a list of generalities."
+        ),
+        (
+            f"The draft then notes that different approaches can produce different outcomes. "
+            f"It treats this point as important without explaining what changes, who is affected, or why the distinction matters. "
+            f"As a result, the paragraph sounds plausible but thin."
+        ),
+        (
+            f"The following paragraph returns to the same broad claim about debate and evidence. "
+            f"It repeats the idea that context matters, then adds that careful thinking is necessary. "
+            f"The passage does not build a sharper relation between its sentences."
+        ),
+        (
+            f"The draft tries to transition into a new section by announcing another aspect of {topic}. "
+            f"It names the topic but not the argumentative pressure behind it. "
+            f"The reader receives a new heading in sentence form rather than a developed turn in the essay."
+        ),
+        (
+            f"The essay next claims that evidence should be balanced with caution. "
+            f"Yet it does not explain what kind of evidence carries the most weight or how caution changes the claim. "
+            f"The result is orderly, but the paragraph remains too general to guide revision."
+        ),
+        (
+            f"The passage introduces a possible objection and then moves past it quickly. "
+            f"It says critics may disagree, but it does not give their concern enough shape to test the main argument. "
+            f"The prose gestures toward contrast without making the contrast do analytical work."
+        ),
+        (
+            f"The draft describes {topic} as a field with practical and theoretical stakes. "
+            f"It joins those stakes with smooth connective phrases, but the sentences do not clearly depend on one another. "
+            f"The paragraph reads like adjacent observations rather than a single developing claim."
+        ),
+        (
+            f"The essay then leans on abstract nouns such as impact, complexity, and significance. "
+            f"Those terms make the passage sound academic, but they blur the action of the argument. "
+            f"The reader can follow the topic without seeing the precise writing move."
+        ),
+        (
+            f"The next paragraph offers a cautious conclusion about {topic}. "
+            f"It avoids making a strong error, but it also avoids naming the exact limit, mechanism, or implication. "
+            f"The prose is safe, yet it does not recover the user's preferred style."
+        ),
+    ]
+    return templates[(step_index - 1) % len(templates)]
+
+
+def _topic_label(task: str) -> str:
+    match = re.search(r"\bin ([^,.]+)", task)
+    if match:
+        return match.group(1).strip()
+    match = re.search(r"\babout ([^,.]+)", task)
+    if match:
+        return match.group(1).strip()
+    return "the topic"
 
 
 def _offline_assess_generation(
