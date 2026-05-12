@@ -52,7 +52,11 @@ CUSTOM_PREFERENCE_POOL = [
     "Prefer examples that reveal a tradeoff rather than merely decorate the claim.",
     "End paragraphs with an analytical implication instead of a summary sentence.",
     "Avoid overusing 'important' and replace it with the exact reason something matters.",
-    "When discussing institutions, specify incentives, constraints, and actors.",
+    "Prefer precise verbs over noun-heavy academic phrasing.",
+    "Keep topic sentences argumentative rather than merely descriptive.",
+    "Use compact clauses instead of long stacked prepositional phrases.",
+    "Avoid vague intensifiers and let the sentence's logic carry emphasis.",
+    "Prefer paragraph endings that sharpen the claim instead of summarizing it.",
 ]
 
 STRUCTURAL_PREFERENCE_POOL = [
@@ -299,9 +303,6 @@ def generate_fake_user_scenarios(count: int = 100, seed: int = 7) -> List[FakeUs
         profile_items.extend(rng.sample(CUSTOM_PREFERENCE_POOL, k=custom_count))
         profile_items.extend(rng.sample(STRUCTURAL_PREFERENCE_POOL, k=2))
         profile_items.extend(rng.sample(VOICE_PREFERENCE_POOL, k=2))
-        profile_items.append(
-            f"For {domain}, prefer examples that name a concrete case, actor, or mechanism before generalizing."
-        )
         rng.shuffle(profile_items)
         scenarios.append(
             FakeUserScenario(
@@ -782,10 +783,7 @@ async def run_default_fake_profile_simulation(
 
 
 def _offline_previous_sentence(scenario: FakeUserScenario, step_index: int) -> str:
-    return (
-        f"In {scenario.task.split(' in ')[-1].rstrip('.')}, the draft has established a broad claim "
-        f"but has not yet made the user's preferred argumentative move."
-    )
+    return f"Paragraph {step_index} develops the essay's argument about {scenario.task.split(' in ')[-1].rstrip('.')}."
 
 
 def _offline_current_sentence(
@@ -794,15 +792,9 @@ def _offline_current_sentence(
     profile_item: str,
     satisfies_profile: bool,
 ) -> str:
-    if satisfies_profile:
-        return (
-            f"This sentence deliberately follows the user's preference to "
-            f"{profile_item[:1].lower() + profile_item[1:].rstrip('.')}"
-        )
-    return (
-        "This sentence stays broad and fluent, but it does not make the specific profile-sensitive move "
-        "the user expects at this point."
-    )
+    passage = _offline_generation_for_step(scenario, step_index, profile_item, satisfies_profile)
+    sentences = re.split(r"(?<=[.!?])\s+", passage.strip())
+    return sentences[-1] if sentences else passage
 
 
 def _offline_generation_for_step(
@@ -811,9 +803,81 @@ def _offline_generation_for_step(
     profile_item: str,
     satisfies_profile: bool,
 ) -> str:
-    previous = _offline_previous_sentence(scenario, step_index)
-    current = _offline_current_sentence(scenario, step_index, profile_item, satisfies_profile)
-    return f"{previous} {current}."
+    topic = scenario.task.split(" in ")[-1].rstrip(".")
+    if satisfies_profile:
+        return _offline_style_aligned_passage(topic, step_index, profile_item)
+    return _offline_style_mismatch_passage(topic, step_index)
+
+
+def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: str) -> str:
+    lowered = profile_item.lower()
+    if "repetition" in lowered or "fresh move" in lowered:
+        return (
+            f"Paragraph {step_index} shifts the argument rather than restating the opening claim. "
+            f"It shows how the debate changes once evidence, method, and reader expectation start pulling in different directions. "
+            f"That turn gives the paragraph a new job instead of recycling the same point in slightly different words."
+        )
+    if "specific" in lowered or "precise" in lowered or "vague" in lowered:
+        return (
+            f"Paragraph {step_index} replaces broad language with sharper terms: evidence becomes trial data, caution becomes uncertainty about scope, and impact becomes a change in what the argument can prove. "
+            f"Those concrete words make the claim easier to test. "
+            f"The prose therefore sounds less inflated and more accountable."
+        )
+    if "tone" in lowered or "measured" in lowered or "restrained" in lowered or "qualification" in lowered:
+        return (
+            f"Paragraph {step_index} advances the claim with restraint. "
+            f"It suggests that the evidence points in a useful direction, while leaving room for limits in method and context. "
+            f"The result is confident without becoming overstated."
+        )
+    if "example" in lowered or "concrete" in lowered or "tradeoff" in lowered:
+        return (
+            f"Paragraph {step_index} anchors the abstract claim in a concrete case. "
+            f"A policy may improve consistency, for example, while also narrowing professional judgment in borderline situations. "
+            f"That tradeoff makes the argument visible rather than merely decorative."
+        )
+    if "mechanism" in lowered or "causal" in lowered or "reasoning" in lowered:
+        return (
+            f"Paragraph {step_index} explains the mechanism behind the claim. "
+            f"The reader can see how a change in incentives alters interpretation, then how that altered interpretation changes the evidence a writer can use. "
+            f"The paragraph therefore gives a reason, not just a conclusion."
+        )
+    if "transition" in lowered or "connect" in lowered or "logical relation" in lowered:
+        return (
+            f"Paragraph {step_index} begins by naming its relation to the prior point. "
+            f"Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. "
+            f"The transition carries the argument forward instead of simply adding another topic."
+        )
+    if "counter" in lowered or "opposing" in lowered or "objections" in lowered:
+        return (
+            f"Paragraph {step_index} gives the opposing view enough force to matter. "
+            f"A skeptical reader might accept the evidence but reject the inference drawn from it. "
+            f"By answering that pressure directly, the paragraph makes the main claim more credible."
+        )
+    if "paragraph" in lowered or "structure" in lowered or "topic sentence" in lowered or "one governing idea" in lowered:
+        return (
+            f"Paragraph {step_index} opens with a debatable claim rather than a topic label. "
+            f"Each following sentence tests or qualifies that claim instead of wandering into a list. "
+            f"The paragraph closes by sharpening the implication for the larger essay."
+        )
+    if "concise" in lowered or "compact" in lowered or "rhythm" in lowered:
+        return (
+            f"Paragraph {step_index} uses a compact rhythm. "
+            f"A short claim sets the direction; a longer sentence explains the pressure behind it. "
+            f"The final sentence lands cleanly."
+        )
+    return (
+        f"Paragraph {step_index} keeps the prose analytical and controlled. "
+        f"It states a claim, explains why the claim matters, and avoids drifting into generic summary. "
+        f"The paragraph's style remains readable while still carrying argumentative weight."
+    )
+
+
+def _offline_style_mismatch_passage(topic: str, step_index: int) -> str:
+    return (
+        f"Paragraph {step_index} discusses {topic} in a broad way. "
+        f"It says the issue is important and has many implications for scholars, practitioners, and society. "
+        f"The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn."
+    )
 
 
 def _offline_assess_generation(
@@ -821,20 +885,18 @@ def _offline_assess_generation(
     helper_profile: List[str],
     latest_chunk: str,
     expected_item: str,
+    satisfies_profile: bool,
 ) -> Dict[str, Any]:
     already_recovered = expected_item in helper_profile
-    overlap = _word_overlap_count(expected_item, latest_chunk)
-    expected_tokens = max(1, len(_tokenize(expected_item)))
-    coverage = overlap / expected_tokens
-    interrupt = (not already_recovered) and coverage < 0.35
+    interrupt = (not already_recovered) and not satisfies_profile
     if interrupt:
         reason = (
-            "The generated chunk sounds plausible but misses an unrecovered hidden preference: "
+            "The generated passage is fluent but misses an unrecovered writing-style preference: "
             f"{expected_item}"
         )
     else:
         reason = (
-            "The generated chunk is acceptable because it either follows the expected preference "
+            "The generated passage is acceptable because it either follows the expected writing preference "
             "or the preference is already recovered."
         )
     return {
@@ -842,7 +904,7 @@ def _offline_assess_generation(
         "reason": reason,
         "confidence": 0.86 if interrupt else 0.68,
         "expected_item": expected_item,
-        "coverage": coverage,
+        "coverage": 1.0 if satisfies_profile else 0.0,
         "target_profile_size": len(target_profile),
     }
 
@@ -870,16 +932,16 @@ def _offline_system_interpretation(
         "reason_candidates": [
             {
                 "id": reason_id,
-                "reason": f"The interrupted sentence is under-specified relative to the hidden preference: {missed_item}",
+                "reason": f"The interrupted passage is under-specified relative to the hidden writing-style preference: {missed_item}",
             },
             {
                 "id": "CONTENT_REFINED",
-                "reason": f"The replacement should convert the broad sentence into a more profile-specific move for {scenario.user_id}.",
+                "reason": f"The replacement should convert the broad passage into a more profile-specific writing move for {scenario.user_id}.",
             },
         ],
         "replacement_guidance": {
-            "goal": f"Revise the interrupted sentence so it reflects: {target_item}",
-            "desired_properties": [target_item, "stay aligned with the essay task", "keep the edit sentence-level"],
+            "goal": f"Revise the interrupted passage so its wording, style, or structure reflects: {target_item}",
+            "desired_properties": [target_item, "stay aligned with the essay task", "keep the edit passage-level"],
             "avoid": ["generic filler", "ignoring the recovered profile preference"],
         },
         "profile_update": {
@@ -899,16 +961,16 @@ def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dic
             "reason_id": "OFFLINE_PROFILE_MATCH",
             "reason": f"Recover hidden profile preference: {target_item}",
             "explanation": f"The simulator interrupted because the draft missed: {missed_item}",
-            "replacement_text": f"Revise the sentence so it follows this stable preference: {target_item}",
+            "replacement_text": f"Revise the passage so it follows this stable writing preference: {target_item}",
             "option_kind": "reason",
             "category": "profile",
         },
         {
             "option_id": str(uuid.uuid4()),
             "reason_id": "OFFLINE_LOCAL_FIX",
-            "reason": "Make a local sentence-level fix.",
-            "explanation": "This option repairs the current sentence but is less useful for long-term profile recovery.",
-            "replacement_text": "Revise the sentence with a clearer local claim.",
+            "reason": "Make a local passage-level fix.",
+            "explanation": "This option repairs the current passage but is less useful for long-term profile recovery.",
+            "replacement_text": "Revise the passage with a clearer local claim.",
             "option_kind": "reason",
             "category": "local",
         },
@@ -962,6 +1024,7 @@ def run_offline_fake_profile_recovery(
                 helper_profile=helper_profile,
                 latest_chunk=generation_text,
                 expected_item=target_item,
+                satisfies_profile=satisfies_profile,
             )
             interruption_point = {
                 "termination_point": _truncate(generation_text, 140),
@@ -986,9 +1049,9 @@ def run_offline_fake_profile_recovery(
                             interruption_reason=assessment["reason"],
                             interruption_point=interruption_point,
                             simulator_confidence=assessment["confidence"],
-                            simulator_decision_rationale=(
-                                f"Expected profile item coverage was {assessment['coverage']:.2f}; no correction was needed."
-                            ),
+                        simulator_decision_rationale=(
+                            "The generated passage satisfied the expected style preference or the preference was already recovered."
+                        ),
                             recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),
                             helper_profile_after_step=list(helper_profile),
                             helper_local_memory_after_step=list(helper_local_memory),
@@ -1021,7 +1084,7 @@ def run_offline_fake_profile_recovery(
                         interruption_point=interruption_point,
                         simulator_confidence=assessment["confidence"],
                         simulator_decision_rationale=(
-                            f"Expected profile item coverage was {assessment['coverage']:.2f}; repair stores: {target_item}"
+                            f"The passage missed an unrecovered wording/style/structure preference; repair stores: {target_item}"
                         ),
                         system_interpretation=system_interpretation,
                         recovery_after_step=compute_profile_similarity(scenario.target_profile, helper_profile),

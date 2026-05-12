@@ -23,32 +23,34 @@ Local browser prototype for interruption-aware AI writing. The app streams a dra
 
 The code includes fake-profile recovery simulation in `writing_helper/simulation.py`. The real AI path asks a profile-satisfaction simulator to interrupt only when the latest generation misses, contradicts, or ignores the hidden user profile.
 
-The latest available run here was offline because `OPENAI_API_KEY` was not set. It used `100` samples, complex hidden profiles, and `12` generated steps per sample. Interruption was decision-based: each chunk was assessed against the next hidden preference and the simulator interrupted only when the chunk missed an unrecovered preference.
+The latest available run here was offline because `OPENAI_API_KEY` was not set. It used `100` samples, style-only hidden profiles, and `12` generated paragraph steps per sample. Interruption was decision-based: each generated passage was assessed against the next hidden wording/style/structure preference, and the simulator interrupted only when the passage missed an unrecovered preference.
+
+`P10` means the 10th percentile: 10% of profiles/runs were at or below that value. `P90` means the 90th percentile: 90% were at or below that value.
 
 ### Summary Statistics
 
 | Metric | Mean | Median | Min | Max | P10 | P90 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Target profile items | `11.44` | `11.00` | `10` | `13` | `10.00` | `13.00` |
-| Target profile words | `118.60` | `119.00` | `94` | `139` | `103.00` | `132.10` |
-| Unique words per profile | `89.21` | `89.00` | `75` | `104` | `79.90` | `99.10` |
-| Duplicate word count | `29.39` | `29.00` | `15` | `45` | `21.00` | `38.00` |
-| Duplicate word ratio | `0.246` | `0.243` | `0.153` | `0.324` | `0.201` | `0.288` |
-| Recovered profile items | `7.49` | `8.00` | `4` | `11` | `6.00` | `9.00` |
-| Final recall | `0.656` | `0.653` | `0.383` | `0.916` | `0.500` | `0.817` |
+| Target profile items | `10.47` | `10.00` | `9` | `12` | `9.00` | `12.00` |
+| Target profile words | `104.64` | `103.00` | `82` | `125` | `91.00` | `121.00` |
+| Unique words per profile | `80.15` | `81.00` | `65` | `92` | `71.00` | `88.00` |
+| Duplicate word count | `24.49` | `23.00` | `10` | `41` | `17.80` | `33.00` |
+| Duplicate word ratio | `0.231` | `0.225` | `0.110` | `0.333` | `0.179` | `0.282` |
+| Recovered profile items | `7.75` | `8.00` | `5` | `11` | `6.00` | `9.00` |
+| Final recall | `0.743` | `0.749` | `0.516` | `1.000` | `0.622` | `0.890` |
 
-Most frequent words across generated profiles: `the` 476, `a` 338, `or` 265, `prefer` 264, `with` 253, `and` 237, `avoid` 210, `to` 198, `use` 194, `that` 193, `when` 192, `concrete` 189.
+Most frequent words across generated profiles: `the` 458, `and` 247, `avoid` 230, `with` 228, `a` 222, `to` 217, `use` 208, `more` 186, `prefer` 178, `keep` 174, `or` 170, `when` 163.
 
 | Run metric | Value |
 | --- | ---: |
 | Samples | `100` |
 | Total generated steps | `1200` |
-| Interruptions | `749` |
-| Non-interruptions | `451` |
-| Mean interruptions per user | `7.49` |
+| Interruptions | `775` |
+| Non-interruptions | `425` |
+| Mean interruptions per user | `7.75` |
 | Final precision, mean / median | `1.000 / 1.000` |
-| Selected option actions | `587` |
-| Manual describe actions | `162` |
+| Selected option actions | `621` |
+| Manual describe actions | `154` |
 
 ### Recovery Plots
 
@@ -58,11 +60,11 @@ Black-line plot by step:
   <rect x="0" y="0" width="620" height="210" fill="white"/>
   <line x1="48" y1="170" x2="590" y2="170" stroke="#444" stroke-width="1"/>
   <line x1="48" y1="20" x2="48" y2="170" stroke="#444" stroke-width="1"/>
-  <polyline fill="none" stroke="black" stroke-width="3" points="48,156 97,141 147,127 196,116 245,99 294,83 344,71 393,59 442,47 491,36 541,28 590,22"/>
+  <polyline fill="none" stroke="black" stroke-width="3" points="48,154 97,139 147,124 196,111 245,97 294,83 344,70 393,59 442,47 491,39 541,32 590,28"/>
   <g fill="black">
-    <circle cx="48" cy="156" r="3"/><circle cx="97" cy="141" r="3"/><circle cx="147" cy="127" r="3"/><circle cx="196" cy="116" r="3"/>
-    <circle cx="245" cy="99" r="3"/><circle cx="294" cy="83" r="3"/><circle cx="344" cy="71" r="3"/><circle cx="393" cy="59" r="3"/>
-    <circle cx="442" cy="47" r="3"/><circle cx="491" cy="36" r="3"/><circle cx="541" cy="28" r="3"/><circle cx="590" cy="22" r="3"/>
+    <circle cx="48" cy="154" r="3"/><circle cx="97" cy="139" r="3"/><circle cx="147" cy="124" r="3"/><circle cx="196" cy="111" r="3"/>
+    <circle cx="245" cy="97" r="3"/><circle cx="294" cy="83" r="3"/><circle cx="344" cy="70" r="3"/><circle cx="393" cy="59" r="3"/>
+    <circle cx="442" cy="47" r="3"/><circle cx="491" cy="39" r="3"/><circle cx="541" cy="32" r="3"/><circle cx="590" cy="28" r="3"/>
   </g>
   <text x="48" y="198" font-size="12" fill="#111">Step 1</text>
   <text x="540" y="198" font-size="12" fill="#111">Step 12</text>
@@ -72,18 +74,18 @@ Black-line plot by step:
 
 | Step | Interruptions | Average recall |
 | ---: | ---: | ---: |
-| 1 | 72 | `0.062` |
-| 2 | 74 | `0.129` |
-| 3 | 72 | `0.191` |
-| 4 | 66 | `0.251` |
-| 5 | 79 | `0.319` |
-| 6 | 68 | `0.381` |
-| 7 | 64 | `0.435` |
-| 8 | 61 | `0.489` |
-| 9 | 60 | `0.543` |
-| 10 | 55 | `0.591` |
-| 11 | 43 | `0.628` |
-| 12 | 35 | `0.656` |
+| 1 | 79 | `0.084` |
+| 2 | 73 | `0.162` |
+| 3 | 73 | `0.243` |
+| 4 | 66 | `0.308` |
+| 5 | 77 | `0.383` |
+| 6 | 69 | `0.458` |
+| 7 | 63 | `0.524` |
+| 8 | 59 | `0.583` |
+| 9 | 63 | `0.645` |
+| 10 | 51 | `0.687` |
+| 11 | 39 | `0.721` |
+| 12 | 30 | `0.743` |
 
 Black-line plot by time:
 
@@ -91,9 +93,9 @@ Black-line plot by time:
   <rect x="0" y="0" width="620" height="210" fill="white"/>
   <line x1="48" y1="170" x2="590" y2="170" stroke="#444" stroke-width="1"/>
   <line x1="48" y1="20" x2="48" y2="170" stroke="#444" stroke-width="1"/>
-  <polyline fill="none" stroke="black" stroke-width="3" points="48,156 184,152 319,119 455,64 590,22"/>
+  <polyline fill="none" stroke="black" stroke-width="3" points="48,154 184,148 319,113 455,52 590,22"/>
   <g fill="black">
-    <circle cx="48" cy="156" r="3"/><circle cx="184" cy="152" r="3"/><circle cx="319" cy="119" r="3"/><circle cx="455" cy="64" r="3"/><circle cx="590" cy="22" r="3"/>
+    <circle cx="48" cy="154" r="3"/><circle cx="184" cy="148" r="3"/><circle cx="319" cy="113" r="3"/><circle cx="455" cy="52" r="3"/><circle cx="590" cy="22" r="3"/>
   </g>
   <text x="44" y="198" font-size="12" fill="#111">1m</text>
   <text x="176" y="198" font-size="12" fill="#111">2m</text>
@@ -106,11 +108,11 @@ Black-line plot by time:
 
 | Time cap | Samples observed | Average recall | Median recall |
 | --- | ---: | ---: | ---: |
-| 1 min | 33 | `0.062` | `0.080` |
-| 2 min | 100 | `0.083` | `0.080` |
-| 5 min | 100 | `0.239` | `0.239` |
-| 10 min | 100 | `0.492` | `0.492` |
-| End of 12 steps | 100 | `0.656` | `0.653` |
+| 1 min | 33 | `0.077` | `0.089` |
+| 2 min | 100 | `0.107` | `0.101` |
+| 5 min | 100 | `0.296` | `0.294` |
+| 10 min | 100 | `0.586` | `0.582` |
+| End of 12 steps | 100 | `0.743` | `0.749` |
 
 ### Fully Demonstrated Example
 
@@ -118,44 +120,44 @@ Example user: `fake_user_001`.
 
 Task: `Draft a research-style essay on the major debates in bioethics, with attention to mechanism, counterargument, and evidence.`
 
-Full hidden profile:
+Full hidden profile, limited to wording style, writing style, and structural preferences:
 
-1. Open paragraphs with a debatable claim rather than a broad topic sentence.
-2. Make each sentence connect more explicitly to the prior idea and task.
-3. Avoid overusing `important` and replace it with the exact reason something matters.
-4. For bioethics, prefer examples that name a concrete case, actor, or mechanism before generalizing.
-5. Use more specific wording instead of broad or generic phrasing.
-6. Avoid generic academic filler such as `in today's society` or `throughout history`.
-7. Favor conceptual synthesis over listing disconnected claims.
-8. Use cautious qualifiers only when they clarify uncertainty, not as padding.
-9. Keep wording flexible enough to avoid sounding overly narrow too early.
-10. Explain the mechanism or reasoning behind important claims.
-11. Keep sentence rhythm varied: short claim, longer explanation, concise implication.
+1. Avoid generic academic filler such as `in today's society` or `throughout history`.
+2. Favor conceptual synthesis over listing disconnected claims.
+3. Make each sentence connect more explicitly to the prior idea and task.
+4. Use cautious qualifiers only when they clarify uncertainty, not as padding.
+5. Open paragraphs with a debatable claim rather than a broad topic sentence.
+6. Avoid vague intensifiers and let the sentence's logic carry emphasis.
+7. Use more specific wording instead of broad or generic phrasing.
+8. Keep wording flexible enough to avoid sounding overly narrow too early.
+9. Explain the mechanism or reasoning behind important claims.
+10. Keep sentence rhythm varied: short claim, longer explanation, concise implication.
 
 Legend: <span style="color:red">●</span> interruption point; <mark>yellow</mark> chosen repair.
 
 | Step | Time | Generated text | Simulator decision | Interpreter record | Recorded memory | Recall |
 | ---: | ---: | --- | --- | --- | --- | ---: |
-| 1 | `104.5s` | In bioethics, the draft has established a broad claim. This sentence stays broad and fluent, but it does not make the specific profile-sensitive move the user expects. | No interruption. The simulator judged the chunk acceptable for this step. | No interpreter call. | No update. | `0.000` |
-| 2 | `184.3s` | This sentence deliberately follows the user's preference to make each sentence connect more explicitly to the prior idea and task. | No interruption. The generated chunk already follows the expected preference. | No interpreter call. | No update. | `0.000` |
-| 3 | `278.0s` | In bioethics, the draft has established a broad claim. <span style="color:red">●</span> This sentence stays broad and fluent, but it does not make the specific profile-sensitive move the user expects. | Interrupt: generated chunk missed `Avoid overusing important and replace it with the exact reason something matters.` | The interrupted sentence is under-specified relative to that hidden preference. | <mark>Revise the sentence so it follows: Avoid overusing important and replace it with the exact reason something matters.</mark> Stored as `offline_global`. | `0.101` |
-| 4 | `323.1s` | This sentence deliberately follows the user's preference to use a concrete bioethics case, actor, or mechanism before generalizing. | No interruption. The expected preference was satisfied. | No interpreter call. | No update. | `0.101` |
-| 5 | `406.7s` | In bioethics, the draft has established a broad claim. <span style="color:red">●</span> This sentence stays broad and fluent, but it does not make the specific profile-sensitive move the user expects. | Interrupt: generated chunk missed `Use more specific wording instead of broad or generic phrasing.` | The interrupted sentence is under-specified relative to that hidden preference. | <mark>Revise the sentence so it follows: Use more specific wording instead of broad or generic phrasing.</mark> Stored as `offline_global`. | `0.185` |
-| 6 | `472.7s` | In bioethics, the draft has established a broad claim. <span style="color:red">●</span> This sentence stays broad and fluent, but it does not make the specific profile-sensitive move the user expects. | Interrupt: generated chunk missed `Avoid generic academic filler such as in today's society or throughout history.` | The interrupted sentence is under-specified relative to that hidden preference. | <mark>Revise the sentence so it follows: Avoid generic academic filler such as in today's society or throughout history.</mark> Stored as `offline_global`. | `0.286` |
-| 7 | `581.4s` | In bioethics, the draft has established a broad claim. <span style="color:red">●</span> This sentence stays broad and fluent, but it does not make the specific profile-sensitive move the user expects. | Interrupt: generated chunk missed `Favor conceptual synthesis over listing disconnected claims.` | The interrupted sentence is under-specified relative to that hidden preference. | <mark>Revise the sentence so it follows: Favor conceptual synthesis over listing disconnected claims.</mark> Stored as `offline_global`. | `0.345` |
-| 8 | `646.5s` | In bioethics, the draft has established a broad claim. <span style="color:red">●</span> This sentence stays broad and fluent, but it does not make the specific profile-sensitive move the user expects. | Interrupt: generated chunk missed `Use cautious qualifiers only when they clarify uncertainty, not as padding.` | The interrupted sentence is under-specified relative to that hidden preference. | <mark>Revise the sentence so it follows: Use cautious qualifiers only when they clarify uncertainty, not as padding.</mark> Stored as `offline_global`. | `0.437` |
-| 9 | `757.4s` | This sentence deliberately follows the user's preference to keep wording flexible enough to avoid sounding overly narrow too early. | No interruption. The expected preference was satisfied. | No interpreter call. | No update. | `0.437` |
-| 10 | `792.8s` | This sentence deliberately follows the user's preference to explain the mechanism or reasoning behind important claims. | No interruption. The expected preference was satisfied. | No interpreter call. | No update. | `0.437` |
-| 11 | `876.3s` | This sentence deliberately follows the user's preference to keep sentence rhythm varied: short claim, longer explanation, concise implication. | No interruption. The expected preference was satisfied. | No interpreter call. | No update. | `0.437` |
-| 12 | `989.0s` | This sentence stays broad and fluent, but the simulator treated the relevant preference as already acceptable or recovered for this step. | No interruption. | No interpreter call. | No update. | `0.437` |
+| 1 | `104.5s` | <span style="color:red">●</span> Paragraph 1 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage is fluent but misses the unrecovered writing-style preference to avoid generic academic filler. | The interrupted passage is under-specified relative to the hidden writing-style preference. | <mark>Revise the passage so it avoids generic academic filler such as `in today's society` or `throughout history`.</mark> Stored as `offline_global`. | `0.117` |
+| 2 | `184.3s` | Paragraph 2 begins by naming its relation to the prior point. Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. The transition carries the argument forward instead of simply adding another topic. | No interruption. The passage satisfied the expected structural preference. | No interpreter call. | No update. | `0.117` |
+| 3 | `278.0s` | <span style="color:red">●</span> Paragraph 3 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to connect each sentence more explicitly to the prior idea and task. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so each sentence connects more explicitly to the prior idea and task.</mark> Stored as `offline_global`. | `0.233` |
+| 4 | `323.1s` | Paragraph 4 keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The paragraph's style remains readable while still carrying argumentative weight. | No interruption. The passage was acceptable for the expected style preference. | No interpreter call. | No update. | `0.233` |
+| 5 | `406.7s` | <span style="color:red">●</span> Paragraph 5 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to open paragraphs with a debatable claim rather than a broad topic sentence. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so the paragraph opens with a debatable claim rather than a broad topic sentence.</mark> Stored as `offline_global`. | `0.350` |
+| 6 | `472.7s` | <span style="color:red">●</span> Paragraph 6 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to avoid vague intensifiers and let logic carry emphasis. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so emphasis comes from sentence logic rather than vague intensifiers.</mark> Stored as `offline_global`. | `0.447` |
+| 7 | `581.4s` | <span style="color:red">●</span> Paragraph 7 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference for more specific wording instead of broad or generic phrasing. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage with more specific wording instead of broad or generic phrasing.</mark> Stored as `offline_global`. | `0.544` |
+| 8 | `646.5s` | <span style="color:red">●</span> Paragraph 8 discusses bioethics in a broad way. It says the issue is important and has many implications for scholars, practitioners, and society. The paragraph adds another general observation, but the wording remains abstract and the structure does not make a clear argumentative turn. | Interrupt: the passage misses the preference to keep wording flexible enough to avoid sounding overly narrow too early. | The interrupted passage is under-specified relative to that hidden writing-style preference. | <mark>Revise the passage so the wording stays flexible before narrowing the claim.</mark> Stored as `offline_global`. | `0.650` |
+| 9 | `757.4s` | Paragraph 9 explains the mechanism behind the claim. The reader can see how a change in incentives alters interpretation, then how that altered interpretation changes the evidence a writer can use. The paragraph therefore gives a reason, not just a conclusion. | No interruption. The passage satisfied the expected mechanism preference. | No interpreter call. | No update. | `0.650` |
+| 10 | `792.8s` | Paragraph 10 uses a compact rhythm. A short claim sets the direction; a longer sentence explains the pressure behind it. The final sentence lands cleanly. | No interruption. The passage satisfied the expected rhythm preference. | No interpreter call. | No update. | `0.650` |
+| 11 | `876.3s` | Paragraph 11 keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The paragraph's style remains readable while still carrying argumentative weight. | No interruption. The passage was acceptable. | No interpreter call. | No update. | `0.650` |
+| 12 | `989.0s` | Paragraph 12 begins by naming its relation to the prior point. Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. The transition carries the argument forward instead of simply adding another topic. | No interruption. The passage was acceptable. | No interpreter call. | No update. | `0.650` |
 
 Recovered helper profile for this example:
 
-1. Avoid overusing `important` and replace it with the exact reason something matters.
-2. Use more specific wording instead of broad or generic phrasing.
-3. Avoid generic academic filler such as `in today's society` or `throughout history`.
-4. Favor conceptual synthesis over listing disconnected claims.
-5. Use cautious qualifiers only when they clarify uncertainty, not as padding.
+1. Avoid generic academic filler such as `in today's society` or `throughout history`.
+2. Make each sentence connect more explicitly to the prior idea and task.
+3. Open paragraphs with a debatable claim rather than a broad topic sentence.
+4. Avoid vague intensifiers and let the sentence's logic carry emphasis.
+5. Use more specific wording instead of broad or generic phrasing.
+6. Keep wording flexible enough to avoid sounding overly narrow too early.
 
 When an interruption happens, the system records the stop point, simulator rationale, interpreter reason, selected repair, memory scope, and recovery score in the raw simulation JSON. The compact exporter keeps those fields in `interruption_audit.jsonl`.
 
