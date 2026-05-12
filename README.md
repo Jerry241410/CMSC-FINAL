@@ -2,6 +2,19 @@
 
 Local browser prototype for interruption-aware AI writing. The app streams a draft, lets the user stop when the current sentence feels wrong, proposes local rewrites, and stores recurring writing preferences in a local profile.
 
+## Research Question
+
+Can interruption behavior during AI-assisted writing be used to reconstruct a user's latent writing profile, including preferences about wording, tone, structure, specificity, and argumentative style?
+
+The current prototype explores a workflow where:
+
+1. The AI writes interactively.
+2. The user stops generation when something feels wrong.
+3. The system interprets why the user interrupted.
+4. It proposes revision options.
+5. The selected revision becomes evidence about the user's preferences.
+6. Over time, the assistant builds a reusable writing profile.
+
 ## Current App
 
 - `python writing.py` starts the web UI at `http://127.0.0.1:8765`.
