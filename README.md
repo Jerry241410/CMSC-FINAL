@@ -1,6 +1,6 @@
 # Writing Helper
 
-Local browser prototype for interruption-aware AI writing. The app streams a draft, lets the user stop when the current sentence feels wrong, proposes local rewrites, and stores recurring writing preferences in a local profile.
+Local browser prototype for interruption-aware multi agent writing system. The user stop when the current sentence feels wrong, proposes local rewrites, and stores recurring writing preferences in a local profile.
 
 ## Research Question
 
