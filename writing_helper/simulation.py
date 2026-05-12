@@ -809,9 +809,362 @@ def _offline_generation_for_step(
     satisfies_profile: bool,
 ) -> str:
     topic = _topic_label(scenario.task)
+    if topic.lower() == "bioethics":
+        return _offline_bioethics_passage(step_index, profile_item, satisfies_profile)
+    return _offline_domain_passage(topic, step_index, satisfies_profile)
+
+
+def _offline_domain_passage(topic: str, step_index: int, satisfies_profile: bool) -> str:
+    material = _domain_material(topic)
+    issue = material["issues"][(step_index - 1) % len(material["issues"])]
+    mechanism = material["mechanisms"][(step_index - 1) % len(material["mechanisms"])]
+    evidence = material["evidence"][(step_index - 1) % len(material["evidence"])]
+    counter = material["counterarguments"][(step_index - 1) % len(material["counterarguments"])]
+    if satisfies_profile:
+        templates = [
+            (
+                f"The debate over {issue} in {topic} turns on a mechanism, not just a slogan. "
+                f"{mechanism} "
+                f"{evidence} "
+                f"That evidence narrows the claim while still leaving room for the counterpressure that {counter.lower()}"
+            ),
+            (
+                f"A stronger account of {topic} begins with {issue}. "
+                f"{mechanism} "
+                f"The relevant evidence is not merely illustrative: {evidence[0].lower() + evidence[1:]} "
+                f"The main objection is serious because {counter.lower()}"
+            ),
+            (
+                f"{issue.capitalize()} shows why arguments in {topic} need both evidence and qualification. "
+                f"{mechanism} "
+                f"{counter} "
+                f"The best version of the claim therefore depends on {evidence[0].lower() + evidence[1:]}"
+            ),
+        ]
+    else:
+        templates = [
+            (
+                f"{topic.capitalize()} includes an important debate about {issue}. "
+                f"Many scholars have different views, and the issue has broad implications for theory and practice. "
+                f"The paragraph names the controversy but does not yet explain the mechanism, evidence, or counterargument."
+            ),
+            (
+                f"Another major issue in {topic} is {issue}. "
+                f"It matters because it affects people, institutions, and future research. "
+                f"The draft sounds relevant, but it relies on broad claims instead of showing how the argument works."
+            ),
+            (
+                f"The essay next turns to {issue} as a complicated part of {topic}. "
+                f"There are benefits and risks on both sides, and the topic deserves careful attention. "
+                f"This version introduces the content, but it does not yet make the evidence or objection do analytical work."
+            ),
+        ]
+    return templates[(step_index - 1) % len(templates)]
+
+
+def _domain_material(topic: str) -> Dict[str, List[str]]:
+    materials = {
+        "machine learning": {
+            "issues": ["model generalization", "algorithmic bias", "interpretability", "data privacy", "human oversight"],
+            "mechanisms": [
+                "A model trained on narrow data can perform well in benchmarks while failing when distributions shift.",
+                "Bias enters through labels, sampling, objectives, and deployment contexts rather than through code alone.",
+                "Interpretability matters because users need to know when a prediction is reliable enough to guide action.",
+            ],
+            "evidence": [
+                "Audit studies and error analyses show that performance often varies across groups and settings.",
+                "Ablation tests, external validation, and post-deployment monitoring provide stronger evidence than a single accuracy score.",
+                "Case studies in health, hiring, and credit scoring show how small model errors can produce institutional consequences.",
+            ],
+            "counterarguments": [
+                "some critics argue that strict constraints can slow useful innovation.",
+                "a highly interpretable model may perform worse than a less transparent one.",
+                "data restrictions can protect privacy while also limiting research quality.",
+            ],
+        },
+        "climate policy": {
+            "issues": ["carbon pricing", "adaptation funding", "energy transition", "climate justice", "industrial regulation"],
+            "mechanisms": [
+                "Carbon pricing changes incentives by making emissions visible in production and consumption costs.",
+                "Adaptation policy works through infrastructure, insurance, land-use rules, and emergency planning.",
+                "Industrial regulation matters because a small number of sectors produce a large share of emissions.",
+            ],
+            "evidence": [
+                "Comparative policy studies show that durable coalitions matter as much as formal targets.",
+                "Emissions inventories and sectoral data reveal where policy pressure is most likely to reduce output.",
+                "Disaster losses and heat exposure data show why adaptation cannot be postponed until mitigation succeeds.",
+            ],
+            "counterarguments": [
+                "households may bear costs before long-term benefits become visible.",
+                "rapid transition can harm workers and regions tied to fossil-fuel industries.",
+                "poorly designed policy can shift emissions abroad rather than reducing them.",
+            ],
+        },
+        "comparative literature": {
+            "issues": ["translation", "world literature", "genre circulation", "colonial archives", "reader reception"],
+            "mechanisms": [
+                "Translation changes not only language but also rhythm, cultural reference, and implied audience.",
+                "Texts circulate through publishers, schools, prizes, and political institutions that shape what counts as global literature.",
+                "Genre travels unevenly because local traditions adapt imported forms to different historical pressures.",
+            ],
+            "evidence": [
+                "Close reading can show how a metaphor or narrative voice shifts across languages.",
+                "Publication histories and reception records reveal which works become legible to foreign readers.",
+                "Archival evidence links literary form to institutions of empire, education, and nationalism.",
+            ],
+            "counterarguments": [
+                "too much institutional focus can flatten aesthetic differences.",
+                "comparison can reproduce the hierarchies it claims to analyze.",
+                "translation may create new literary value rather than merely losing an original meaning.",
+            ],
+        },
+        "public health": {
+            "issues": ["vaccination policy", "health inequality", "surveillance", "risk communication", "resource allocation"],
+            "mechanisms": [
+                "Vaccination works through herd effects, trust, access, and perceived risk rather than individual choice alone.",
+                "Health inequality persists because exposure, treatment, income, and environment reinforce one another.",
+                "Surveillance can detect outbreaks early, but it also changes how communities experience state authority.",
+            ],
+            "evidence": [
+                "Epidemiological data show that small changes in uptake can alter population-level risk.",
+                "Neighborhood-level studies link morbidity to housing, work, pollution, and care access.",
+                "Communication trials show that trust often matters more than information volume.",
+            ],
+            "counterarguments": [
+                "mandates may protect communities while weakening trust among skeptical groups.",
+                "privacy limits can slow the collection of useful outbreak data.",
+                "individual behavior matters, but it cannot explain structural exposure by itself.",
+            ],
+        },
+        "urban sociology": {
+            "issues": ["gentrification", "housing segregation", "public transit", "policing", "neighborhood displacement"],
+            "mechanisms": [
+                "Gentrification works through rent gaps, investment flows, zoning rules, and cultural rebranding.",
+                "Segregation persists because housing markets convert past exclusion into present opportunity gaps.",
+                "Transit shapes access to jobs, schools, and care by changing the practical geography of a city.",
+            ],
+            "evidence": [
+                "Census data, eviction records, and rent histories can show displacement before it becomes visible in street life.",
+                "Ethnographic work reveals how residents experience policy changes that aggregate data can miss.",
+                "Transit-use and commute-time data show who benefits from infrastructure investment.",
+            ],
+            "counterarguments": [
+                "new investment can improve services even as it raises displacement risk.",
+                "neighborhood change is not always reducible to a single class dynamic.",
+                "local resistance can protect residents but also restrict housing supply.",
+            ],
+        },
+        "education policy": {
+            "issues": ["standardized testing", "teacher accountability", "school funding", "curriculum reform", "college access"],
+            "mechanisms": [
+                "Testing changes classroom behavior by linking scores to evaluation, funding, and institutional reputation.",
+                "Funding formulas shape opportunity by determining class size, staffing, facilities, and enrichment.",
+                "Curriculum reform works only when teacher training, materials, and assessment move together.",
+            ],
+            "evidence": [
+                "Longitudinal studies show that school effects interact with income, neighborhood, and family resources.",
+                "District comparisons reveal how equal rules can produce unequal outcomes when local capacity differs.",
+                "Classroom observations can explain why a policy that works on paper fails in implementation.",
+            ],
+            "counterarguments": [
+                "accountability can expose failure even when it narrows instruction.",
+                "more funding matters, but governance determines how resources reach students.",
+                "choice policies may expand options for some families while leaving others behind.",
+            ],
+        },
+        "economic history": {
+            "issues": ["industrialization", "financial crises", "trade shocks", "labor institutions", "state capacity"],
+            "mechanisms": [
+                "Industrialization changes productivity through technology, labor discipline, capital investment, and market integration.",
+                "Financial crises spread when leverage, confidence, and institutional guarantees interact.",
+                "Trade shocks reshape regions by altering prices, employment, and political coalitions.",
+            ],
+            "evidence": [
+                "Wage series, price data, and firm records help distinguish growth from redistribution.",
+                "Natural experiments and archival data can show whether institutions caused change or merely accompanied it.",
+                "Regional comparisons reveal why the same policy can produce different economic paths.",
+            ],
+            "counterarguments": [
+                "quantitative evidence can miss informal labor and household production.",
+                "institutional explanations sometimes understate geography and resource endowments.",
+                "short-run harm may coexist with long-run growth, making welfare claims difficult.",
+            ],
+        },
+        "human-computer interaction": {
+            "issues": ["usability", "automation", "trust calibration", "accessibility", "interface personalization"],
+            "mechanisms": [
+                "Usability affects behavior by shaping attention, error recovery, and the cost of changing a decision.",
+                "Automation changes responsibility because users may defer to systems they do not fully understand.",
+                "Accessibility works when design anticipates variation in perception, mobility, language, and context.",
+            ],
+            "evidence": [
+                "User studies, task completion data, and error logs show where design intentions break down.",
+                "Field deployments reveal forms of misuse that lab studies often miss.",
+                "Accessibility audits connect interface choices to measurable exclusion.",
+            ],
+            "counterarguments": [
+                "friction can sometimes protect users from acting too quickly.",
+                "personalization may improve relevance while reducing transparency.",
+                "high trust can be useful until the system fails in an unfamiliar case.",
+            ],
+        },
+        "political theory": {
+            "issues": ["legitimacy", "democratic representation", "freedom", "equality", "civil disobedience"],
+            "mechanisms": [
+                "Legitimacy depends on how institutions convert coercive power into publicly defensible authority.",
+                "Representation links citizens to decisions through elections, parties, deliberation, and organized interests.",
+                "Freedom changes meaning depending on whether domination, interference, or capability is treated as the central threat.",
+            ],
+            "evidence": [
+                "Historical cases show how constitutional forms can survive while democratic substance erodes.",
+                "Institutional comparisons reveal how rules distribute voice unevenly across groups.",
+                "Conceptual analysis clarifies why the same policy can appear liberating under one theory and coercive under another.",
+            ],
+            "counterarguments": [
+                "abstract principles can ignore the compromises required by institutional design.",
+                "majority rule can express equality while threatening vulnerable minorities.",
+                "civil disobedience can deepen democracy or undermine lawful stability, depending on context.",
+            ],
+        },
+    }
+    return materials.get(topic.lower(), {
+        "issues": [f"the central dispute in {topic}", f"the evidence base in {topic}", f"the institutional stakes of {topic}"],
+        "mechanisms": [f"The mechanism links individual decisions to broader outcomes in {topic}."],
+        "evidence": [f"Comparative evidence helps separate plausible claims from broad assertion in {topic}."],
+        "counterarguments": [f"critics can argue that the evidence is incomplete or context-dependent."],
+    })
     if satisfies_profile:
         return _offline_style_aligned_passage(topic, step_index, profile_item)
     return _offline_style_mismatch_passage(topic, step_index)
+
+
+def _offline_bioethics_passage(step_index: int, profile_item: str, satisfies_profile: bool) -> str:
+    weak_passages = [
+        (
+            "Bioethics is a broad field that deals with medicine, technology, public health, and social values. "
+            "Many issues in the field are important because they affect patients, professionals, and society. "
+            "The main point is that new medical capacities create many complicated questions that require careful discussion."
+        ),
+        (
+            "Patient autonomy is one of the major debates in bioethics. "
+            "Patients often want control over their own bodies, while doctors have training that helps them decide what treatment is best. "
+            "This creates a difficult situation because both sides have important concerns."
+        ),
+        (
+            "Informed consent is also significant because it helps patients understand medical decisions. "
+            "It involves information, understanding, and voluntary choice, but the process can be difficult in real clinical settings. "
+            "For this reason, informed consent remains a central topic in medical ethics."
+        ),
+        (
+            "End-of-life care is another important debate. "
+            "Some people believe patients should be able to choose death when suffering is severe, while others worry that this changes the role of medicine. "
+            "Both sides raise serious concerns about dignity, safety, and professional responsibility."
+        ),
+        (
+            "Assisted dying is controversial because it involves patient choice and the possibility of abuse. "
+            "Supporters point to autonomy and compassion, while critics point to pressure on vulnerable patients. "
+            "The debate shows that bioethics must balance individual preference with social protection."
+        ),
+        (
+            "Reproductive ethics includes abortion, embryo selection, surrogacy, and genetic testing. "
+            "These issues are complicated because they involve bodies, families, future children, and social values. "
+            "Different people disagree because they begin from different moral assumptions."
+        ),
+        (
+            "Prenatal testing and embryo selection can reduce suffering, but they can also raise concerns about disability and social expectations. "
+            "Some people think selection is a responsible form of prevention, while others think it can express a narrow view of valuable life. "
+            "This is a difficult debate with many implications."
+        ),
+        (
+            "Bioethics also considers scarce resources, including organs, vaccines, and intensive-care beds. "
+            "Allocation decisions are hard because they require fairness, effectiveness, and public trust. "
+            "The issue is especially important when demand is greater than supply."
+        ),
+        (
+            "Genetic editing creates another debate because it may prevent disease but may also change future generations. "
+            "The technology is powerful, and society must decide how to use it responsibly. "
+            "This shows why bioethics has to keep up with scientific change."
+        ),
+        (
+            "Medical artificial intelligence raises questions about accuracy, bias, and responsibility. "
+            "Algorithms may help clinicians, but they may also reproduce unequal data patterns. "
+            "This makes oversight and accountability important."
+        ),
+        (
+            "Public health ethics often requires balancing individual freedom with collective safety. "
+            "Vaccination, quarantine, and disease surveillance all show this tension. "
+            "The challenge is deciding when public benefit justifies limits on personal choice."
+        ),
+        (
+            "Overall, bioethics studies difficult questions about medicine and society. "
+            "Its debates are important because they shape how people live, suffer, choose, and receive care. "
+            "A good essay should consider different views and evidence."
+        ),
+    ]
+    strong_passages = [
+        (
+            "Bioethics begins where technical capacity outruns shared moral agreement. "
+            "Modern medicine can prolong dying, screen embryos, collect biological data, and delegate decisions to machines, but each capacity redistributes risk and authority. "
+            "A research-style account therefore has to ask not whether innovation is simply good or bad, but how it changes vulnerability, consent, and responsibility."
+        ),
+        (
+            "The autonomy debate is not a contest between patient preference and medical expertise alone. "
+            "Its mechanism is institutional: because clinicians control specialized knowledge, patients can be reduced to objects of judgment unless consent procedures return agency to them. "
+            "Shared decision-making is stronger than pure autonomy or pure paternalism because it lets clinicians define medically reasonable options while patients decide which risks fit their values."
+        ),
+        (
+            "Informed consent matters because disclosure without comprehension can still leave power untouched. "
+            "A patient who signs a form may not understand probability, alternatives, or the consequences of refusal. "
+            "The ethical test is therefore practical: whether the process gives the patient enough understanding to make a decision that is genuinely their own."
+        ),
+        (
+            "End-of-life care turns on the difference between preserving life and prolonging suffering. "
+            "Ventilators, feeding tubes, and sedation can sustain biological function after recovery or consciousness has become unlikely. "
+            "The ethical question is whether medicine serves the patient by extending time, or fails the patient by extending a condition the patient has judged intolerable."
+        ),
+        (
+            "The strongest objection to assisted dying is not simply that death is bad. "
+            "It is that choice can be shaped by disability stigma, family burden, unequal care, or cost pressure. "
+            "That counterargument forces supporters to show why safeguards, reporting, and independent review can protect autonomy rather than merely assume it."
+        ),
+        (
+            "Reproductive ethics joins bodily autonomy to disputes about moral status and social equality. "
+            "Abortion restrictions do not erase abortion; they often change its timing, safety, and accessibility. "
+            "That evidence matters because the ethical debate is partly about what law does to actual bodies, not only what principles announce."
+        ),
+        (
+            "Embryo selection and prenatal testing reveal a subtler conflict. "
+            "Preventing severe disease can be an act of care, yet selecting against traits can also echo social prejudice about which lives are worth welcoming. "
+            "The ethical line is not between choice and coercion in the abstract, but between treatment-oriented prevention and normalization pressure."
+        ),
+        (
+            "Allocation debates make justice concrete. "
+            "When organs or intensive-care beds are scarce, a system must choose among urgency, expected benefit, waiting time, and equal respect. "
+            "No formula removes moral loss, but a transparent rule can prevent bedside decisions from becoming hidden privilege."
+        ),
+        (
+            "Gene editing changes the scale of bioethical responsibility. "
+            "A therapy for one patient affects consent, but a heritable edit may affect people who cannot yet speak. "
+            "That temporal asymmetry explains why safety evidence alone is not enough; governance must also address who gets to authorize risk for future persons."
+        ),
+        (
+            "Medical AI shifts ethical attention from individual judgment to system design. "
+            "A model may improve diagnosis while embedding bias from the data used to train it. "
+            "Responsibility therefore cannot stop with the clinician using the tool; it also belongs to the institutions that validate, monitor, and deploy it."
+        ),
+        (
+            "Public health ethics shows why autonomy is relational rather than isolated. "
+            "A vaccination decision, quarantine order, or surveillance program affects others through transmission, trust, and unequal exposure to harm. "
+            "The hard question is not whether liberty matters, but what kind of evidence justifies limiting liberty for collective protection."
+        ),
+        (
+            "The major debates in bioethics share a common structure. "
+            "Each begins with a technical power, then asks who bears its risks, who controls its use, and whose vulnerability becomes easier to ignore. "
+            "A strong essay should therefore connect principle, mechanism, counterargument, and evidence instead of treating ethical positions as a list."
+        ),
+    ]
+    passages = strong_passages if satisfies_profile else weak_passages
+    return passages[(step_index - 1) % len(passages)]
 
 
 def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: str) -> str:
@@ -934,6 +1287,10 @@ def _offline_style_mismatch_passage(topic: str, step_index: int) -> str:
 
 
 def _topic_label(task: str) -> str:
+    lowered = task.lower()
+    for domain in sorted(ACADEMIC_DOMAINS, key=len, reverse=True):
+        if domain in lowered:
+            return domain
     match = re.search(r"\bin ([^,.]+)", task)
     if match:
         return match.group(1).strip()
