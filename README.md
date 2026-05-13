@@ -6,6 +6,24 @@ Local browser prototype for interruption-aware multi agent writing system. The u
 
 Can interruption behavior during AI-assisted writing be used to reconstruct a user's latent writing profile, including preferences about wording, tone, structure, specificity, and argumentative style?
 
+## Motivation
+
+LLM writing assistants can generate fluent prose, but fluent prose is not always the prose a writer wants. A sentence can be grammatically correct while still feeling too generic, too stiff, too vague, too repetitive, or misaligned with the writer's voice.
+
+This project starts from a small interaction that most writing systems treat as a stop command: the moment when a user interrupts generation because the current sentence feels wrong. Instead of treating that interruption only as a failure, this system treats it as evidence. If a writer stops at a sentence and then chooses or writes a replacement, that behavior can reveal a preference about wording, tone, specificity, structure, or argument style.
+
+## Why This Matters
+
+Personalization in writing assistants is often handled through explicit prompting: the user has to say what they want before the system can adapt. That places extra work on the writer and favors users who are good at prompt engineering. Interruption-aware writing offers a different path: the assistant can learn from ordinary revision behavior that already happens during writing.
+
+The goal is not only to make better local rewrites. The larger goal is to build an inspectable writing profile over time, so the assistant can remember preferences like "avoid generic academic filler," "use more specific wording," or "explain the mechanism behind important claims." This makes personalization more transparent than hidden model adaptation and gives the user a profile they can review, correct, or reuse.
+
+## Related Work
+
+- Lee, Liang, and Yang's **CoAuthor** dataset shows why detailed interaction traces matter for human-AI writing. CoAuthor records how 63 writers interacted with GPT-3 across 1,445 writing sessions, including suggestions, acceptances, dismissals, edits, cursor movement, and timestamps. This project follows the same basic insight: the process of collaboration contains useful information, not just the final text. Reference: https://arxiv.org/abs/2201.06796 and https://coauthor.stanford.edu/
+- Yeh, Ramos, Ng, Huntington, and Banks' **GhostWriter** focuses on personalization and agency in collaborative human-AI writing. GhostWriter learns a user's intended writing style implicitly while also allowing explicit teaching through annotations and edits. This project is related, but focuses on a narrower signal: whether interruption points and selected rewrites can recover a user's hidden writing preferences. Reference: https://arxiv.org/abs/2402.08855
+- Chen et al.'s **PRELUDE/CIPHER** studies how LLM agents can learn latent user preferences from edits. It is conceptually close because it treats user edits as natural feedback and stores preferences in an interpretable form. This project applies a similar preference-learning motivation to interruption-aware writing. Reference: https://arxiv.org/abs/2404.15269
+
 The current prototype explores a workflow where:
 
 1. The AI writes interactively.
