@@ -27,11 +27,10 @@ The current prototype explores a workflow where:
 
 1. The AI writes interactively.
 2. The user stops generation when something feels wrong.
-3. The system interprets why the user interrupted.
-4. It proposes revision options.
-5. The selected revision becomes evidence about the user's preferences.
-6. Interpreter provide insights behind the selected revision.
-7. Over time, the assistant builds a reusable writing profile if similar option is selected multiple times.
+3. The system interprets why the user interrupted and pass to revision generator.
+4. revision generator proposes 10 revision options to be selected.
+5. Interpreter provide insights behind the selected revision to be recorded in profile.
+6. Over time, the assistant builds a reusable writing profile if similar option is selected multiple times.
 
 ## Current App
 
