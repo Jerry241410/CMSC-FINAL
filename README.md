@@ -1,9 +1,8 @@
-# Writing Helper
+# Writing Helper(Project C)
 
-Local browser prototype for interruption-aware multi agent writing system. The user stop when the current sentence feels wrong, proposes local rewrites, and stores recurring writing preferences in a local profile.
+An Interruption-aware multi agent writing system. The user stop when the current sentence feels wrong, proposes local rewrites, and stores recurring writing preferences in a local profile.
 
-## Research Question
-
+## Research Question Base on Project Design
 Can interruption behavior during AI-assisted writing be used to reconstruct a user's latent writing profile, including preferences about wording, tone, structure, specificity, and argumentative style?
 
 ## Motivation
@@ -31,7 +30,8 @@ The current prototype explores a workflow where:
 3. The system interprets why the user interrupted.
 4. It proposes revision options.
 5. The selected revision becomes evidence about the user's preferences.
-6. Over time, the assistant builds a reusable writing profile.
+6. Interpreter provide insights behind the selected revision.
+7. Over time, the assistant builds a reusable writing profile if similar option is selected multiple times.
 
 ## Current App
 
@@ -40,7 +40,7 @@ The current prototype explores a workflow where:
 - The old Tkinter UI still exists in `writing_helper/ui.py`, but the default app now uses `writing_helper/web.py` and `writing_helper/web_static/`.
 - Streaming response time was improved by removing the artificial `0.2s` per-token delay.
 
-## Core Flow
+## Usage
 
 1. Enter a user name and writing task.
 2. Start streaming.
@@ -49,6 +49,20 @@ The current prototype explores a workflow where:
 5. The replacement agent proposes rewrite options.
 6. Applying a rewrite updates the text and local preference memory.
 7. Repeated or explicit durable preferences are saved into the user profile.
+
+## Project Iteration
+
+This project developed through three major updates.
+
+In the first version, every selected revision was written directly into the global profile. There was no threshold for repeated evidence, so a single selected rewrite could become a durable preference immediately. The replacement generator also had only five fixed options, and the system did not include an interpreter that could explain the interruption and translate the selected repair into a reusable profile item. As a result, profile updates were relatively fixed and hardcoded: the system recorded the chosen repair, but it did not reason carefully about what preference the repair implied.
+
+The first major update changed this workflow. The system now uses an interpreter to infer why the interruption happened and what preference is implied by the selected replacement or custom user feedback. It also separates local observations from durable global memory: a preference must appear repeatedly before it is promoted into the recovered profile. This makes the profile less reactive to one-off choices and better aligned with stable writing preferences.
+
+The second major update focused on evaluation. Earlier, the evaluation goal was unclear because there was no direct way to measure whether the recovered profile was good. The system did not track profile recovery rate, generate random hidden profiles, or let an LLM-controlled simulator write and interrupt according to a hidden profile. The current version adds these pieces. It can generate fake user profiles, simulate writing sessions against those profiles, let the simulator decide when the draft violates the hidden preferences, and measure how much of the hidden profile is recovered over time.
+
+The third major update improved the UI. 
+
+
 
 ## Simulation Report
 
