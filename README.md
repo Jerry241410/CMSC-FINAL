@@ -1,183 +1,171 @@
-# Writing Helper(Project C)
+# Writing Helper: An Interruption-Aware AI Writing Assistant
 
-An Interruption-aware multi agent writing system. The user stop when the current sentence feels wrong, proposes local rewrites, and stores recurring writing preferences in a local profile.
+Project C (Design): profile-based AI writing helper.
 
-## Research Question Base on Project Design
-Can interruption behavior during AI-assisted writing be used to reconstruct a user's latent writing profile, including preferences about wording, tone, structure, specificity, and argumentative style?
+## Abstract
+
+Writing Helper is a profile-based AI writing assistant that learns from the moment a writer stops the machine. Instead of treating interruption as a failure, the prototype treats it as feedback: when the user stops a generated sentence, chooses a rewrite, or writes a custom repair, the system infers a possible writing preference and stores it in a local profile. The project matters because many AI writing tools produce fluent text that still feels wrong for a particular writer. This prototype asks whether ordinary revision behavior can become a more transparent and less prompt-heavy way to personalize AI writing support.
+
+## AI Disclosure
+
+![AI disclosure statement](docs/full_statement.svg)
+
+This work was created with an even blend of human and AI contributions. AI was used to make stylistic edits, such as changes to structure, wording, and clarity. AI was used to make content edits, such as changes to scope, information, and ideas. AI was prompted for its contributions, or AI assistance was enabled. AI-generated content was reviewed and approved. The following model(s) or application(s) were used: Chatgpt 5.4.
+
+I chose a direct disclosure approach for both the report and the project because the prototype itself is about making AI assistance inspectable. A generic sentence like "AI was used" would not fit the values of the system. The disclosure names the kind of contribution AI made, the degree of human review, and the model used. This reveals that the writing, code structure, and reflection were partly shaped through AI assistance. It also obscures some details: it does not show every prompt, every rejected suggestion, or the exact boundary between human decision and AI phrasing. That limitation is important because the project argues for better audit trails, while this disclosure is still a compact label rather than a full process log.
 
 ## Motivation
 
-LLM writing assistants can generate fluent prose, but fluent prose is not always the prose a writer wants. A sentence can be grammatically correct while still feeling too generic, too stiff, too vague, too repetitive, or misaligned with the writer's voice.
+Most AI writing assistants are good at producing coherent prose. The harder problem is producing prose that feels like the writer's intended voice, argument, and level of specificity. A sentence can be grammatical and still be wrong: too broad, too polished, too vague, too cautious, too list-like, or disconnected from the previous idea. In actual writing, people often notice this mismatch at the moment they interrupt, delete, or rewrite.
 
-This project starts from a small interaction that most writing systems treat as a stop command: the moment when a user interrupts generation because the current sentence feels wrong. Instead of treating that interruption only as a failure, this system treats it as evidence. If a writer stops at a sentence and then chooses or writes a replacement, that behavior can reveal a preference about wording, tone, specificity, structure, or argument style.
+This project responds to a gap between fluent generation and writer agency. Current assistants often rely on explicit prompting: "make this more concise," "sound more academic," or "use my style." That favors users who already know how to describe their preferences. Writing Helper explores a different signal. It asks whether the system can learn from behavior the writer already performs: stopping the AI when something feels off and selecting a better direction.
 
-## Why This Matters
+The project connects to human-AI writing research such as CoAuthor, which shows that interaction traces are useful evidence in collaborative writing, not just leftover metadata. It also connects to GhostWriter and other preference-learning systems that treat edits and annotations as a way to personalize assistance while preserving user control. My design borrows that general insight but narrows the focus to interruption: the stop point becomes a small but meaningful expression of taste, judgment, and frustration.
 
-Personalization in writing assistants is often handled through explicit prompting: the user has to say what they want before the system can adapt. That places extra work on the writer and favors users who are good at prompt engineering. Interruption-aware writing offers a different path: the assistant can learn from ordinary revision behavior that already happens during writing.
+## Intended Users and Use Contexts
 
-The goal is not only to make better local rewrites. The larger goal is to build an inspectable writing profile over time, so the assistant can remember preferences like "avoid generic academic filler," "use more specific wording," or "explain the mechanism behind important claims." This makes personalization more transparent than hidden model adaptation and gives the user a profile they can review, correct, or reuse.
+The intended users are students, researchers, and reflective writers who use AI for drafting but do not want to hand over their voice. The prototype is especially aimed at writers who can recognize when a sentence feels wrong but may not immediately know how to explain the preference behind that feeling.
 
-## Related Work
+Typical use contexts include drafting course essays, research-style paragraphs, reflective writing, memos, and project reports. The system is not designed as a one-click essay generator. It is designed as a slower, more inspectable writing partner: the user starts a draft, interrupts at bad moments, compares replacement options, optionally writes a custom repair, and watches a local writing profile form over time.
 
-- Lee, Liang, and Yang's **CoAuthor** dataset shows why detailed interaction traces matter for human-AI writing. CoAuthor records how 63 writers interacted with GPT-3 across 1,445 writing sessions, including suggestions, acceptances, dismissals, edits, cursor movement, and timestamps. This project follows the same basic insight: the process of collaboration contains useful information, not just the final text. Reference: https://arxiv.org/abs/2201.06796 and https://coauthor.stanford.edu/
-- Yeh, Ramos, Ng, Huntington, and Banks' **GhostWriter** focuses on personalization and agency in collaborative human-AI writing. GhostWriter learns a user's intended writing style implicitly while also allowing explicit teaching through annotations and edits. This project is related, but focuses on a narrower signal: whether interruption points and selected rewrites can recover a user's hidden writing preferences. Reference: https://arxiv.org/abs/2402.08855
-- Chen et al.'s **PRELUDE/CIPHER** studies how LLM agents can learn latent user preferences from edits. It is conceptually close because it treats user edits as natural feedback and stores preferences in an interpretable form. This project applies a similar preference-learning motivation to interruption-aware writing. Reference: https://arxiv.org/abs/2404.15269
+## Prototype
 
-The current prototype explores a workflow where:
+Run the prototype locally:
 
-1. The AI writes interactively.
-2. The user stops generation when something feels wrong.
-3. The system interprets why the user interrupted and pass to revision generator.
-4. revision generator proposes 10 revision options to be selected.
-5. Interpreter provide insights behind the selected revision to be recorded in profile.
-6. Over time, the assistant builds a reusable writing profile if similar option is selected multiple times.
+```bash
+python writing.py
+```
 
-## Current App
+The app starts a local web UI at:
 
-- `python writing.py` starts the web UI at `http://127.0.0.1:8765`.
-- The UI includes user/task input, live document, replacement options, custom revision input, profile memory, logs, and timing status.
-- The old Tkinter UI still exists in `writing_helper/ui.py`, but the default app now uses `writing_helper/web.py` and `writing_helper/web_static/`.
-- Streaming response time was improved by removing the artificial `0.2s` per-token delay.
+```text
+http://127.0.0.1:8765
+```
 
-## Usage
+The current interface includes:
 
-1. Enter a user name and writing task.
-2. Start streaming.
-3. Stop when the generated text goes off track.
-4. The interpreter diagnoses why the sentence may be wrong.
-5. The replacement agent proposes rewrite options.
-6. Applying a rewrite updates the text and local preference memory.
-7. Repeated or explicit durable preferences are saved into the user profile.
+- user and task input
+- a live generated document
+- stop, accept, continue, and export controls
+- replacement options after interruption
+- a custom revision box
+- interpreter output explaining the likely reason for the stop
+- profile memory showing local observations and durable preferences
+- an activity log and timing status
 
-## Project Iteration
+Main implementation files:
 
-This project developed through three major updates.
+- `writing_helper/web.py`: local web server and API
+- `writing_helper/web_static/`: browser UI
+- `writing_helper/orchestrator.py`: workflow coordination
+- `writing_helper/agents.py`: writer, interpreter, replacement, and memory agents
+- `writing_helper/simulation.py`: fake-profile recovery simulation
+- `writing_helper/storage.py`: local profile persistence
 
-In the first version, every selected revision was written directly into the global profile. There was no threshold for repeated evidence, so a single selected rewrite could become a durable preference immediately. The replacement generator also had only five fixed options, and the system did not include an interpreter that could explain the interruption and translate the selected repair into a reusable profile item. As a result, profile updates were relatively fixed and hardcoded: the system recorded the chosen repair, but it did not reason carefully about what preference the repair implied.
+## Design Rationale
 
-The first major update changed this workflow. The system now uses an interpreter to infer why the interruption happened and what preference is implied by the selected replacement or custom user feedback. It also separates local observations from durable global memory: a preference must appear repeatedly before it is promoted into the recovered profile. This makes the profile less reactive to one-off choices and better aligned with stable writing preferences.
+The core design decision is to make interruption the central interaction. I could have built a normal chat-based writing helper where the user asks for revisions after a full draft appears. I chose interruption instead because the stop moment is high-signal: it marks the exact sentence where the user's expectation and the AI's output diverged.
 
-The second major update focused on evaluation. Earlier, the evaluation goal was unclear because there was no direct way to measure whether the recovered profile was good. The system did not track profile recovery rate, generate random hidden profiles, or let an LLM-controlled simulator write and interrupt according to a hidden profile. The current version adds these pieces. It can generate fake user profiles, simulate writing sessions against those profiles, let the simulator decide when the draft violates the hidden preferences, and measure how much of the hidden profile is recovered over time.
+The second major decision is to use a profile, not only immediate rewrites. A local rewrite solves the sentence in front of the user, but it does not help the assistant remember the writer. The profile turns repeated choices into durable preferences, such as "avoid generic academic filler" or "explain the mechanism behind important claims." This matters because personalization should be inspectable. The user can see the memory rather than trusting hidden adaptation.
 
-The third major update improved the UI. 
+The third decision is to separate local observations from global profile items. In an earlier version, every selected revision was immediately treated as a lasting preference. That was too reactive. The current design requires repeated evidence before promoting a preference. This protects the profile from one-off choices and makes the system less likely to overfit a single sentence.
 
+I vibe-coded much of the prototype, but I still made the main design choices intentionally:
 
+- The interface uses a large live document pane because the writer's text should remain the center of attention.
+- Replacement options are placed beside the draft so revision feels like part of writing, not a separate chat.
+- The interpreter is visible because the system should explain what it thinks the interruption means.
+- Profile memory is visible because personalization should be something the user can inspect.
+- Export exists because a writing system that learns from behavior should also let the user review the session data.
+- The color and layout are restrained because this is a working writing tool, not a marketing page.
 
-## Simulation Report
+Alternatives I considered:
 
-The code includes fake-profile recovery simulation in `writing_helper/simulation.py`. The real AI path asks a profile-satisfaction simulator to interrupt only when the latest generation misses, contradicts, or ignores the hidden user profile.
+- A chat-only assistant: easier to build, but it hides the exact moment where a sentence failed.
+- A full-document revision tool: useful for polishing, but weaker for learning local preferences.
+- Immediate permanent profile updates: simple, but ethically risky because the system could misremember a temporary choice as a stable identity.
+- Fully automatic personalization: convenient, but less transparent and harder for the user to correct.
 
-The latest available run here was offline because `OPENAI_API_KEY` was not set. It used `100` samples, style-only hidden profiles, and `30` generated passage steps per sample. Every simulated task now generates domain-specific essay content, not placeholder prose: bioethics uses autonomy/end-of-life/reproductive ethics examples, climate policy uses carbon pricing/adaptation/transition examples, HCI uses usability/automation/trust examples, and so on. Interruption was decision-based: each generated passage was assessed against a hidden wording/style/structure preference, and the simulator interrupted only when the passage missed an unrecovered preference.
+## Process and Iterations
 
-The simulated feedback loop now follows the intended interaction: after interruption, the writing assistant offers a writing-fill menu of candidate revisions; the simulator selects the best option if one fits; if none fits, it gives a custom request; the interpreter infers a preference from that selected option or custom request. A preference is only promoted into the recovered profile after `3` repeated observations.
+### Iteration 1: From Simple Rewrite Tool to Interruption Signal
 
-### Summary Statistics
+The first version treated interruption mostly as a trigger for replacement. The user could stop generation, and the system would offer a small set of rewrite options. This proved useful, but shallow. It helped repair a sentence without explaining what the repair revealed about the writer.
+
+The surprise was that the most interesting data was not the replacement itself but the relation between the stopped sentence and the selected replacement. For example, if the AI wrote a broad sentence and the user chose "make more specific," the system could infer a preference for concrete wording. That changed the project from a rewrite tool into a profile-recovery experiment.
+
+Before:
+
+```text
+User stops generation -> replacement options appear -> selected replacement is inserted.
+```
+
+After:
+
+```text
+User stops generation -> interpreter diagnoses the stop -> replacement options appear -> selected repair becomes evidence for a local profile.
+```
+
+### Iteration 2: From Immediate Memory to Repeated Evidence
+
+The second version wrote selected preferences directly into the global profile. This felt satisfying because the profile changed quickly, but it created a problem: one interruption could become a permanent statement about the writer. That is not how writing preferences work. A writer may want more detail in one paragraph and less detail in another.
+
+I changed the memory design so the system stores local observations first. A preference is promoted only after repeated evidence. In the current simulation, the threshold is `3` similar observations. This makes the profile slower but more credible.
+
+Failure case:
+
+```text
+One selected option: "Use a more cautious qualifier."
+Old behavior: save as a permanent preference.
+Problem: the writer may only need caution for this one claim.
+New behavior: store as local evidence until it repeats.
+```
+
+### Iteration 3: From Hand-Wavy Evaluation to Fake-Profile Simulation
+
+The third pivot was evaluation. At first, I could demonstrate the interface but could not clearly say whether the system recovered anything meaningful. To test the mechanism, I added fake-profile simulation. The simulator creates hidden user profiles, generates writing tasks, interrupts when generated prose violates the hidden profile, chooses from replacement options or writes custom feedback, and measures how many hidden preferences are recovered.
+
+The latest available run was offline because `OPENAI_API_KEY` was not set. It used `100` samples, style-only hidden profiles, and `30` generated passage steps per sample. This is not a real model-based evaluation, but it checks whether the recovery and reporting pipeline works.
+
+Summary from the offline simulation:
 
 | Metric | Mean | Median | Min | Max |
 | --- | ---: | ---: | ---: | ---: |
 | Target profile items | `10.47` | `10.00` | `9` | `12` |
-| Target profile words | `102.32` | `102.50` | `79` | `125` |
-| Unique words per profile | `78.22` | `78.00` | `63` | `92` |
-| Duplicate word count | `24.10` | `23.00` | `9` | `41` |
-| Duplicate word ratio | `0.233` | `0.228` | `0.108` | `0.333` |
 | Recovered profile items | `5.00` | `5.00` | `1` | `9` |
 | Final recall | `0.489` | `0.495` | `0.096` | `0.923` |
 
-Most frequent words across generated profiles: `the` 458, `and` 247, `avoid` 230, `with` 228, `a` 222, `to` 217, `use` 208, `more` 186, `prefer` 178, `keep` 174, `or` 170, `when` 163.
-
-Most common exact profile items:
-
-| Exact profile item | Profiles containing it |
-| --- | ---: |
-| Keep wording flexible enough to avoid sounding overly narrow too early. | `51%` |
-| Use a brief opposing idea or contrast when it strengthens the point. | `43%` |
-| Use more specific wording instead of broad or generic phrasing. | `41%` |
-| Prefer clearer, lighter, and more concise sentences. | `41%` |
-| Avoid repetition and let each sentence make a fresh move. | `40%` |
-| Keep the tone aligned with the intended voice of the piece. | `39%` |
-| State the core claim more precisely and with a more refined point. | `35%` |
-| Make each sentence connect more explicitly to the prior idea and task. | `34%` |
-| Explain the mechanism or reasoning behind important claims. | `34%` |
-| Use one governing idea per paragraph and subordinate examples to that idea. | `33%` |
-| Support abstract points with concrete examples when needed. | `33%` |
-| Avoid generic academic filler. | `29%` |
-
-### Recovery Rate Line Plot
-
 ![Average recovery rate line plot](docs/avg_recovery_rate_line_plot.svg)
 
-Average recovery by selected steps:
+One representative hidden profile included preferences such as:
 
-| Step | Interruptions | Average recall |
-| ---: | ---: | ---: |
-| 1 | 86 | `0.000` |
-| 5 | 86 | `0.000` |
-| 10 | 86 | `0.000` |
-| 15 | 89 | `0.000` |
-| 20 | 79 | `0.031` |
-| 25 | 80 | `0.260` |
-| 30 | 57 | `0.489` |
+- Avoid generic academic filler.
+- Make each sentence connect more explicitly to the prior idea and task.
+- Use cautious qualifiers only when they clarify uncertainty, not as padding.
+- Open paragraphs with a debatable claim rather than a broad topic sentence.
+- Explain the mechanism or reasoning behind important claims.
 
-| Time cap | Samples observed | Average recall | Median recall |
-| --- | ---: | ---: | ---: |
-| 10 min | 100 | `0.000` | `0.000` |
-| 20 min | 100 | `0.004` | `0.000` |
-| 30 min | 100 | `0.251` | `0.227` |
-| 40 min | 100 | `0.487` | `0.495` |
-| End of 30 steps | 100 | `0.489` | `0.495` |
+In the demonstrated run, repeated interruptions eventually promoted six recovered profile items. The recovery curve was slow at first because the threshold prevented immediate promotion, then increased once repeated evidence accumulated.
 
-### Fully Demonstrated Example
+## Ethical Implications
 
-Example user: `fake_user_001`.
+This project is ethically interesting because it turns ordinary writing behavior into data about a person. That is both the opportunity and the risk. On the positive side, the profile can reduce prompting labor and give writers more control over AI assistance. On the negative side, a system could overinterpret small actions, preserve preferences the user no longer endorses, or make the writer feel watched while drafting.
 
-Task: `Draft a research-style essay on the major debates in bioethics, with attention to mechanism, counterargument, and evidence.`
+The current prototype responds to those risks in several ways. Profiles are local, visible, and based on repeated observations rather than single actions. The interpreter output is shown so the user can see how the system is reasoning. Export makes the session reviewable. Still, the prototype does not yet include enough controls for editing, deleting, or rejecting inferred preferences. A more complete version should let users approve profile promotions, mark an inference as wrong, and separate preferences by genre or assignment.
 
-Full hidden profile, limited to wording style, writing style, and structural preferences:
+There is also an authorship concern. A tool that learns a user's style can support agency, but it can also smooth away productive struggle. I do not think the goal should be to make every sentence sound instantly polished. The better goal is to help writers notice their own preferences more clearly.
 
-1. Avoid generic academic filler.
-2. Favor conceptual synthesis over listing disconnected claims.
-3. Make each sentence connect more explicitly to the prior idea and task.
-4. Use cautious qualifiers only when they clarify uncertainty, not as padding.
-5. Open paragraphs with a debatable claim rather than a broad topic sentence.
-6. Avoid vague intensifiers and let the sentence's logic carry emphasis.
-7. Use more specific wording instead of broad or generic phrasing.
-8. Keep wording flexible enough to avoid sounding overly narrow too early.
-9. Explain the mechanism or reasoning behind important claims.
-10. Keep sentence rhythm varied: short claim, longer explanation, concise implication.
+## Reflection and Limitations
 
-Legend: <span style="color:red">&#9679;</span> interruption point; <mark>yellow</mark> chosen repair.
+I learned that "personalization" is too vague unless the system can show what it thinks it has learned. The profile view became more important than I expected because it changes the assistant from a mysterious generator into a negotiable writing partner. I also learned that interruption is a richer design object than I first assumed. A stop is not just a command; it can be a complaint, a preference, a diagnosis, or a request for a different direction.
 
-The table below shows selected steps from the `30`-step run. It demonstrates the actual mechanism: the simulator does not reveal the answer directly; it chooses from writing-fill options, or uses custom feedback when no option fits. The interpreter then infers a reusable preference from that choice. A preference is promoted only after `3` similar observations.
+I also learned something about my own writing and design process. Because I vibe-coded the prototype, I sometimes moved faster than my explanations. Writing this report forced me to justify decisions that initially came from intuition: why the profile is visible, why promotion should be delayed, why the live document stays central, and why the system should not silently personalize.
 
-| Step | Time | Generated passage | Writing-fill choice | Interpreter record | Memory state | Recall |
-| ---: | ---: | --- | --- | --- | --- | ---: |
-| 1 | `104.5s` | <span style="color:red">&#9679;</span> Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. | Options included `Make more specific`, `Improve transition`, <mark>`Match latent style: Avoid generic academic filler.`</mark>, `Explain mechanism`, `Open with claim`, and `None fit`. Simulator selected the highlighted option. | Interpreted from selected option: prefer avoiding generic academic filler. | Local observation `1/3`; no global profile update. | `0.000` |
-| 3 | `281.8s` | <span style="color:red">&#9679;</span> Informed consent is also significant because it helps patients understand medical decisions. It involves information, understanding, and voluntary choice, but the process can be difficult in real clinical settings. For this reason, informed consent remains a central topic in medical ethics. | Simulator selected <mark>`Improve the argumentative transition.`</mark> | Interpreted from selected option: make each sentence connect more explicitly to the prior idea and task. | Local observation `1/3`; no global profile update. | `0.000` |
-| 6 | `531.5s` | <span style="color:red">&#9679;</span> Reproductive ethics includes abortion, embryo selection, surrogacy, and genetic testing. These issues are complicated because they involve bodies, families, future children, and social values. Different people disagree because they begin from different moral assumptions. | No offered option fit, so simulator chose <mark>`None fit`</mark> and wrote custom feedback: avoid vague intensifiers; let sentence logic carry emphasis. | Interpreted from custom feedback: emphasis should come from reasoning rather than vague intensifiers. | Local observation `1/3`; no global profile update. | `0.000` |
-| 9 | `843.1s` | <span style="color:red">&#9679;</span> Gene editing is one of the most important issues in modern bioethics because it can change future generations. It raises concerns about safety, consent, inequality, and the role of scientists. The debate shows that new technologies require strong ethical rules. | Simulator selected <mark>`Explain the mechanism behind the claim.`</mark> | Interpreted from selected option: explain the mechanism or reasoning behind important claims. | Local observation `1/3`; no global profile update. | `0.000` |
-| 11 | `927.6s` | <span style="color:red">&#9679;</span> Public health ethics is important because it affects everyone in society. Vaccination, quarantine, and surveillance involve many competing values and can be controversial. These debates show why public health requires careful ethical thinking. | Simulator selected <mark>`Match latent style: Avoid generic academic filler.`</mark> | Same inferred preference as step 1. | Local observation `2/3`; still not promoted. | `0.000` |
-| 13 | `1035.7s` | <span style="color:red">&#9679;</span> The debates discussed above are connected in many ways. They all involve values, choices, risks, and social consequences. A good essay should discuss these issues clearly and carefully. | Simulator selected <mark>`Improve the argumentative transition.`</mark> | Same inferred preference as step 3. | Local observation `2/3`; still not promoted. | `0.000` |
-| 21 | `1639.5s` | <span style="color:red">&#9679;</span> Bioethics is an important field because it helps society think about medicine and technology. It covers many controversial issues and asks people to consider different values. These debates matter because they affect patients, doctors, researchers, and the public. | No offered option fit, so simulator chose <mark>`None fit`</mark> and wrote custom feedback: avoid generic academic filler. | Interpreted from custom feedback as the same preference observed in steps 1 and 11. | Observation `3/3`; promoted to recovered profile. | `0.042` |
-| 23 | `1771.8s` | <span style="color:red">&#9679;</span> Informed consent is important in research and clinical care. It gives patients information and helps them make choices. It is also connected to autonomy, trust, and professional responsibility. | Simulator selected <mark>`Improve the argumentative transition.`</mark> | Same inferred connection preference observed in steps 3 and 13. | Observation `3/3`; promoted to recovered profile. | `0.168` |
-| 24 | `1851.3s` | <span style="color:red">&#9679;</span> End-of-life care may be complicated and sensitive in many cases. Patients might want comfort, families might disagree, and clinicians might be uncertain about what to do. This area of bioethics requires careful judgment. | No offered option fit, so simulator chose <mark>`None fit`</mark> and wrote custom feedback: use cautious qualifiers only when they clarify uncertainty. | Interpreted from custom feedback: avoid padding the prose with unnecessary caution. | Observation `3/3`; promoted to recovered profile. | `0.284` |
-| 25 | `1955.4s` | <span style="color:red">&#9679;</span> Assisted dying is a topic in bioethics that involves autonomy, suffering, and professional responsibility. People disagree about whether it should be allowed and how it should be regulated. The debate includes both individual rights and social risks. | Simulator selected <mark>`Open with a debatable claim.`</mark> | Same inferred structure preference observed earlier. | Observation `3/3`; promoted to recovered profile. | `0.411` |
-| 29 | `2226.3s` | <span style="color:red">&#9679;</span> Medical AI is a growing issue in bioethics because it can affect diagnosis, treatment, and trust. It may improve care, but it can also create bias and responsibility problems. These issues show why technology needs ethical oversight. | Simulator selected <mark>`Explain the mechanism behind the claim.`</mark> | Same inferred mechanism preference observed earlier. | Observation `3/3`; promoted to recovered profile. | `0.495` |
-| 30 | `2334.9s` | <span style="color:red">&#9679;</span> The major debates in bioethics show that medicine involves science, values, and policy. Each debate has supporters and critics. A strong essay should be clear, balanced, and thoughtful. | Simulator selected <mark>`Match latent style: Keep sentence rhythm varied.`</mark> | Interpreted from selected option: prefer varied sentence rhythm. | Observation `3/3`; promoted to recovered profile. | `0.600` |
+The main limitation is that the strongest evaluation is simulated. The offline simulation demonstrates the mechanism, but it does not prove that real writers interrupt in stable enough patterns for accurate profile recovery. The prototype also depends on the quality of the interpreter. If the interpreter misreads the user's reason for stopping, the profile can drift. Another limitation is that the current profile treats preferences as fairly general, while real writing preferences are contextual: a lab report, reflective essay, and policy memo may require different voices.
 
-Recovered helper profile for this example:
+With another month, I would add user controls for approving, editing, and deleting inferred profile items. I would also run a small user study where participants draft with the tool, then judge whether the recovered profile actually describes them. Finally, I would improve the UI so each profile item links back to the concrete interruptions that produced it.
 
-1. Avoid generic academic filler.
-2. Make each sentence connect more explicitly to the prior idea and task.
-3. Use cautious qualifiers only when they clarify uncertainty, not as padding.
-4. Open paragraphs with a debatable claim rather than a broad topic sentence.
-5. Explain the mechanism or reasoning behind important claims.
-6. Keep sentence rhythm varied: short claim, longer explanation, concise implication.
-
-When an interruption happens, the system records the stop point, simulator rationale, interpreter reason, selected repair, memory scope, and recovery score in the raw simulation JSON. The compact exporter keeps those fields in `interruption_audit.jsonl`.
-
-This offline run checks the recovery/reporting pipeline. It is not a real AI evaluation. Run the non-offline simulation with an API key for model-based results.
-
-## Run
+## Run Instructions
 
 Install dependencies:
 
@@ -203,33 +191,30 @@ Choose a different port:
 python -m writing_helper.web --port 8766
 ```
 
-## Simulation
-
-Real AI simulation:
+Run the real AI simulation:
 
 ```bash
 python run_fake_profile_simulation.py --count 100 --max-steps 30
 ```
 
-Offline sanity simulation:
+Run the offline sanity simulation:
 
 ```bash
 python run_fake_profile_simulation.py --count 100 --max-steps 30 --offline
 ```
 
-Compact audit export:
+Export a compact audit:
 
 ```bash
 python export_simulation_report.py simulation_outputs/your_run.json
 ```
 
-The exporter now writes only `interruption_audit.jsonl` and `simulation_summary.json`; the human-readable summary belongs in this README.
+## References
 
-## Main Files
+Lee, M., Liang, P., & Yang, Q. (2022). *CoAuthor: Designing a human-AI collaborative writing dataset for exploring language model capabilities*. arXiv. https://arxiv.org/abs/2201.06796
 
-- `writing_helper/web.py`: local web server and API.
-- `writing_helper/web_static/`: browser UI.
-- `writing_helper/orchestrator.py`: workflow coordination.
-- `writing_helper/agents.py`: writer, interpreter, replacement, and memory agents.
-- `writing_helper/simulation.py`: fake-profile recovery simulation.
-- `writing_helper/storage.py`: local profile persistence.
+Yeh, C., Ramos, G., Ng, R., Huntington, M., & Banks, R. (2024). *GhostWriter: Augmenting collaborative human-AI writing experiences through personalization and agency*. arXiv. https://arxiv.org/abs/2402.08855
+
+Chen, V., et al. (2024). *Aligning LLM agents by learning latent preference from user edits*. arXiv. https://arxiv.org/abs/2404.15269
+
+PAIR. (n.d.). *People + AI Guidebook*. Google. https://pair.withgoogle.com/guidebook/
