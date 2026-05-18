@@ -96,7 +96,6 @@ Alternatives I considered:
 
 The first version treated interruption mostly as a trigger for replacement. The user could stop generation, and the system would offer a small set of rewrite options. This proved useful, but shallow. It helped repair a sentence without explaining what the repair revealed about the writer.
 
-The surprise was that the most interesting data was not the replacement itself but the relation between the stopped sentence and the selected replacement. For example, if the AI wrote a broad sentence and the user chose "make more specific," the system could infer a preference for concrete wording. That changed the project from a rewrite tool into a profile-recovery experiment.
 
 Before:
 
@@ -107,7 +106,7 @@ User stops generation -> replacement options appear -> selected replacement is i
 After:
 
 ```text
-User stops generation -> interpreter diagnoses the stop -> replacement options appear -> selected repair becomes evidence for a local profile.
+User stops generation -> interpreter diagnoses the stop -> replacement options appear -> selected repair becomes evidence for profile.
 ```
 
 ### Iteration 2: From Immediate Memory to Repeated Evidence
@@ -125,7 +124,7 @@ Problem: the writer may only need caution for this one claim.
 New behavior: store as local evidence until it repeats.
 ```
 
-### Iteration 3: From Hand-Wavy Evaluation to Fake-Profile Simulation
+### Iteration 3: Fake-Profile Simulation
 
 The third pivot was evaluation. At first, I could demonstrate the interface but could not clearly say whether the system recovered anything meaningful. To test the mechanism, I added fake-profile simulation. The simulator creates hidden user profiles, generates writing tasks, interrupts when generated prose violates the hidden profile, chooses from replacement options or writes custom feedback, and measures how many hidden preferences are recovered.
 
