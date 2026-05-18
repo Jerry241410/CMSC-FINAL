@@ -135,8 +135,30 @@ Summary from the offline simulation:
 | Metric | Mean | Median | Min | Max |
 | --- | ---: | ---: | ---: | ---: |
 | Target profile items | `10.47` | `10.00` | `9` | `12` |
+| Target profile words | `102.32` | `102.50` | `79` | `125` |
+| Unique words per profile | `78.22` | `78.00` | `63` | `92` |
+| Duplicate word count | `24.10` | `23.00` | `9` | `41` |
+| Duplicate word ratio | `0.233` | `0.228` | `0.108` | `0.333` |
 | Recovered profile items | `5.00` | `5.00` | `1` | `9` |
 | Final recall | `0.489` | `0.495` | `0.096` | `0.923` |
+
+Most frequent words across randomly generated profiles: `the` 458, `and` 247, `avoid` 230, `with` 228, `a` 222, `to` 217, `use` 208, `more` 186, `prefer` 178, `keep` 174, `or` 170, `when` 163.
+
+Most common exact profile items:
+
+| Exact profile item | Profiles containing it |
+| --- | ---: |
+| Keep wording flexible enough to avoid sounding overly narrow too early. | `51%` |
+| Use a brief opposing idea or contrast when it strengthens the point. | `43%` |
+| Use more specific wording instead of broad or generic phrasing. | `41%` |
+| Prefer clearer, lighter, and more concise sentences. | `41%` |
+| Avoid repetition and let each sentence make a fresh move. | `40%` |
+| Keep the tone aligned with the intended voice of the piece. | `39%` |
+| State the core claim more precisely and with a more refined point. | `35%` |
+| Make each sentence connect more explicitly to the prior idea and task. | `34%` |
+| Explain the mechanism or reasoning behind important claims. | `34%` |
+| Support abstract points with concrete examples when needed. | `33%` |
+| Avoid generic academic filler. | `29%` |
 
 ![Average recovery rate line plot](docs/avg_recovery_rate_line_plot.svg)
 
@@ -155,25 +177,53 @@ Example user: `fake_user_001`.
 
 Task: `Draft a research-style essay on the major debates in bioethics, with attention to mechanism, counterargument, and evidence.`
 
-Hidden profile preferences included:
+Full hidden profile being simulated:
 
 - Avoid generic academic filler.
+- Favor conceptual synthesis over listing disconnected claims.
 - Make each sentence connect more explicitly to the prior idea and task.
 - Use cautious qualifiers only when they clarify uncertainty, not as padding.
 - Open paragraphs with a debatable claim rather than a broad topic sentence.
+- Avoid vague intensifiers and let the sentence's logic carry emphasis.
+- Use more specific wording instead of broad or generic phrasing.
+- Keep wording flexible enough to avoid sounding overly narrow too early.
 - Explain the mechanism or reasoning behind important claims.
 - Keep sentence rhythm varied: short claim, longer explanation, concise implication.
 
-The trace below shows how the system moves from interruption to revision to profile memory.
+The trace below shows the full 30-step process from `docs/poster_simulation.json`. Steps 16, 17, 22, 26, and 28 did not trigger interruption because the simulated user judged the passage acceptable. Other steps created local evidence, and steps 21, 23, 24, 25, 29, and 30 promoted repeated observations into the recovered profile.
 
-| Step | Generated passage at interruption | Selected repair | Interpreter record | Memory state |
-| ---: | --- | --- | --- | --- |
-| 1 | `Bioethics is a broad field that deals with medicine, technology, public health, and social values.` | `Match latent style: Avoid generic academic filler.` | Prefer avoiding generic academic filler. | Local observation `1/3`; no global profile update. |
-| 3 | `Informed consent is also significant because it helps patients understand medical decisions.` | `Improve the argumentative transition.` | Make each sentence connect more explicitly to the prior idea and task. | Local observation `1/3`; no global profile update. |
-| 6 | `Reproductive ethics includes abortion, embryo selection, surrogacy, and genetic testing. These issues are complicated...` | Custom feedback: avoid vague intensifiers; let sentence logic carry emphasis. | Emphasis should come from reasoning rather than vague intensifiers. | Local observation `1/3`; no global profile update. |
-| 21 | `Bioethics is an important field because it helps society think about medicine and technology.` | Custom feedback: avoid generic academic filler. | Same preference observed in steps 1 and 11. | Observation `3/3`; promoted to recovered profile. |
-| 23 | `Informed consent is important in research and clinical care. It gives patients information and helps them make choices.` | `Improve the argumentative transition.` | Same connection preference observed in earlier steps. | Observation `3/3`; promoted to recovered profile. |
-| 29 | `Medical AI is a growing issue in bioethics because it can affect diagnosis, treatment, and trust.` | `Explain the mechanism behind the claim.` | Explain the mechanism or reasoning behind important claims. | Observation `3/3`; promoted to recovered profile. |
+| Step | Interrupted | Repair or simulator decision | Memory state | Recall |
+| ---: | :---: | --- | --- | ---: |
+| 1 | Yes | Avoid generic academic filler. | Local observation only. | `0.000` |
+| 2 | Yes | Favor conceptual synthesis over listing disconnected claims. | Local observation only. | `0.000` |
+| 3 | Yes | Connect each sentence more explicitly to the prior idea and task. | Local observation only. | `0.000` |
+| 4 | Yes | Use cautious qualifiers only when they clarify uncertainty. | Local observation only. | `0.000` |
+| 5 | Yes | Open with a debatable claim rather than a broad topic sentence. | Local observation only. | `0.000` |
+| 6 | Yes | Avoid vague intensifiers; let sentence logic carry emphasis. | Local observation only. | `0.000` |
+| 7 | Yes | Use more specific wording and a clearer claim. | Local observation only. | `0.000` |
+| 8 | Yes | Keep wording flexible enough to avoid sounding too narrow too early. | Local observation only. | `0.000` |
+| 9 | Yes | Explain the mechanism or reasoning behind the claim. | Local observation only. | `0.000` |
+| 10 | Yes | Keep sentence rhythm varied. | Local observation only. | `0.000` |
+| 11 | Yes | Avoid generic academic filler. | Local observation only. | `0.000` |
+| 12 | Yes | Favor conceptual synthesis over listing disconnected claims. | Local observation only. | `0.000` |
+| 13 | Yes | Connect each sentence more explicitly to the prior idea and task. | Local observation only. | `0.000` |
+| 14 | Yes | Use cautious qualifiers only when they clarify uncertainty. | Local observation only. | `0.000` |
+| 15 | Yes | Open paragraphs with a debatable claim. | Local observation only. | `0.000` |
+| 16 | No | Passage accepted by simulator. | No new evidence. | `0.000` |
+| 17 | No | Passage accepted by simulator. | No new evidence. | `0.000` |
+| 18 | Yes | Keep wording flexible enough to avoid sounding too narrow too early. | Local observation only. | `0.000` |
+| 19 | Yes | Explain the mechanism or reasoning behind important claims. | Local observation only. | `0.000` |
+| 20 | Yes | Keep sentence rhythm varied. | Local observation only. | `0.000` |
+| 21 | Yes | Avoid generic academic filler. | Promoted to recovered profile. | `0.042` |
+| 22 | No | Passage accepted by simulator. | No new evidence. | `0.042` |
+| 23 | Yes | Connect each sentence more explicitly to the prior idea and task. | Promoted to recovered profile. | `0.168` |
+| 24 | Yes | Use cautious qualifiers only when they clarify uncertainty. | Promoted to recovered profile. | `0.284` |
+| 25 | Yes | Open paragraphs with a debatable claim. | Promoted to recovered profile. | `0.411` |
+| 26 | No | Passage accepted by simulator. | No new evidence. | `0.411` |
+| 27 | Yes | Use more specific wording and a clearer claim. | Local observation only. | `0.411` |
+| 28 | No | Passage accepted by simulator. | No new evidence. | `0.411` |
+| 29 | Yes | Explain the mechanism or reasoning behind important claims. | Promoted to recovered profile. | `0.495` |
+| 30 | Yes | Keep sentence rhythm varied. | Promoted to recovered profile. | `0.600` |
 
 Recovered helper profile for this example:
 
