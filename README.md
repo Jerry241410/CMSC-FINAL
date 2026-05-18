@@ -10,13 +10,13 @@ Writing Helper is a profile-based AI writing assistant that learns from the mome
 
 ![AI disclosure statement](docs/full_statement.svg)
 
-This work was created with an even blend of human and AI contributions. AI was used to make stylistic edits, such as changes to structure, wording, and clarity. AI was used to make content edits, such as changes to scope, information, and ideas. AI was prompted for its contributions, or AI assistance was enabled. AI-generated content was reviewed and approved. The following model(s) or application(s) were used: Chatgpt 5.4.
+I designed the whole system and communicated with Professor Lee about the design. AI was used only for coding support and revision of code. AI-generated code or code edits were reviewed and approved. The following model(s) or application(s) were used: Chatgpt 5.4.
 
-I chose a direct disclosure approach for both the report and the project because the prototype itself is about making AI assistance inspectable. A generic sentence like "AI was used" would not fit the values of the system. The disclosure names the kind of contribution AI made, the degree of human review, and the model used. This reveals that the writing, code structure, and reflection were partly shaped through AI assistance. It also obscures some details: it does not show every prompt, every rejected suggestion, or the exact boundary between human decision and AI phrasing. That limitation is important because the project argues for better audit trails, while this disclosure is still a compact label rather than a full process log.
+I chose a direct disclosure approach for both the report and the project. A generic sentence like "AI was used" would not fit the values of the system. The disclosure names the kind of contribution AI made, the degree of human review, and the model used. I designed the project concept and system logic myself, with feedback from Professor Lee, while using AI as a coding and code-revision assistant. I use vibe coding in this assignment so the limitation is this disclosure is still a compact label rather than a full process log.
 
 ## Motivation
 
-Most AI writing assistants are good at producing coherent prose. The harder problem is producing prose that feels like the writer's intended voice, argument, and level of specificity. A sentence can be grammatical and still be wrong: too broad, too polished, too vague, too cautious, too list-like, or disconnected from the previous idea. In actual writing, people often notice this mismatch at the moment they interrupt, delete, or rewrite.
+Most AI writing assistants are good at producing coherent prose. The harder problem is producing prose that feels like the writer's intended voice, argument, and level of specificity. A sentence can be grammatical and still be wrong because the user doens't like it. In other words, a good writing assitant shall understand users' preference. 
 
 This project responds to a gap between fluent generation and writer agency. Current assistants often rely on explicit prompting: "make this more concise," "sound more academic," or "use my style." That favors users who already know how to describe their preferences. Writing Helper explores a different signal. It asks whether the system can learn from behavior the writer already performs: stopping the AI when something feels off and selecting a better direction.
 
@@ -62,29 +62,33 @@ Main implementation files:
 - `writing_helper/simulation.py`: fake-profile recovery simulation
 - `writing_helper/storage.py`: local profile persistence
 
+The multi-agent system uses AutoGen Core to coordinate the writer, interpreter, replacement, and memory agents.
+
 ## Design Rationale
 
-The core design decision is to make interruption the central interaction. I could have built a normal chat-based writing helper where the user asks for revisions after a full draft appears. I chose interruption instead because the stop moment is high-signal: it marks the exact sentence where the user's expectation and the AI's output diverged.
+I chose interruption instead because the stop moment is high-signal: it marks the exact sentence where the user's expectation and the AI's output diverged.
 
-The second major decision is to use a profile, not only immediate rewrites. A local rewrite solves the sentence in front of the user, but it does not help the assistant remember the writer. The profile turns repeated choices into durable preferences, such as "avoid generic academic filler" or "explain the mechanism behind important claims." This matters because personalization should be inspectable. The user can see the memory rather than trusting hidden adaptation.
+The second major decision is to use a profile, not only immediate rewrites. A local rewrite solves the sentence in front of the user, but it does not help the assistant remember the writer. The profile turns repeated choices into durable preferences, such as "explain the mechanism behind important claims." This matters because personalization should be inspectable. The user can see the memory.
 
 The third decision is to separate local observations from global profile items. In an earlier version, every selected revision was immediately treated as a lasting preference. That was too reactive. The current design requires repeated evidence before promoting a preference. This protects the profile from one-off choices and makes the system less likely to overfit a single sentence.
 
-I vibe-coded much of the prototype, but I still made the main design choices intentionally:
+I vibe-coded the prototype, but I designed the full system structure and workflow myself and discussed the design with Professor Lee. The project is organized as a multi-agent writing system rather than a single chatbot. The writer agent produces draft text, the user interrupts at the sentence that feels wrong, the interpreter agent analyzes the stop point, the replacement agent generates possible repairs, and the memory layer records repeated preferences in a local profile. The web interface, profile storage, orchestration code, and simulation pipeline are all built around that sequence.
 
-- The interface uses a large live document pane because the writer's text should remain the center of attention.
-- Replacement options are placed beside the draft so revision feels like part of writing, not a separate chat.
-- The interpreter is visible because the system should explain what it thinks the interruption means.
-- Profile memory is visible because personalization should be something the user can inspect.
-- Export exists because a writing system that learns from behavior should also let the user review the session data.
-- The color and layout are restrained because this is a working writing tool, not a marketing page.
+My main design choices were about how the whole system should work:
+
+- The system begins from interruption because the exact stop point gives more useful evidence than a general request like "make this better."
+- The agents are separated by role because writing, interpreting a problem, proposing revisions, and updating memory are different tasks that need different prompts and outputs.
+- The profile has local and global memory because one selected rewrite should not immediately become a permanent claim about the writer.
+- The interface keeps the draft, replacement choices, interpreter output, and profile memory visible because each part represents one stage of the system's reasoning loop.
+
 
 Alternatives I considered:
 
-- A chat-only assistant: easier to build, but it hides the exact moment where a sentence failed.
-- A full-document revision tool: useful for polishing, but weaker for learning local preferences.
-- Immediate permanent profile updates: simple, but ethically risky because the system could misremember a temporary choice as a stable identity.
-- Fully automatic personalization: convenient, but less transparent and harder for the user to correct.
+- A pre-written profile setup, where the user describes their preferred style before writing. I did not choose this as the main design because writers often discover what they want only after seeing a sentence that feels wrong.
+- A single-agent system, where one model handles writing, diagnosis, revision, and memory. I chose a multi-agent structure because each stage has a different job and should be easier to inspect.
+- Immediate permanent profile updates after every selected rewrite. This would make the profile grow quickly, but it could misread a temporary choice as a stable writing preference.
+
+
 
 ## Process and Iterations
 
@@ -115,7 +119,7 @@ I changed the memory design so the system stores local observations first. A pre
 Failure case:
 
 ```text
-One selected option: "Use a more cautious qualifier."
+One selected option implies: "Use a more cautious qualifier."
 Old behavior: save as a permanent preference.
 Problem: the writer may only need caution for this one claim.
 New behavior: store as local evidence until it repeats.
@@ -139,7 +143,6 @@ Summary from the offline simulation:
 
 One representative hidden profile included preferences such as:
 
-- Avoid generic academic filler.
 - Make each sentence connect more explicitly to the prior idea and task.
 - Use cautious qualifiers only when they clarify uncertainty, not as padding.
 - Open paragraphs with a debatable claim rather than a broad topic sentence.
@@ -147,13 +150,47 @@ One representative hidden profile included preferences such as:
 
 In the demonstrated run, repeated interruptions eventually promoted six recovered profile items. The recovery curve was slow at first because the threshold prevented immediate promotion, then increased once repeated evidence accumulated.
 
+### Example Process Trace
+
+Example user: `fake_user_001`.
+
+Task: `Draft a research-style essay on the major debates in bioethics, with attention to mechanism, counterargument, and evidence.`
+
+Hidden profile preferences included:
+
+- Avoid generic academic filler.
+- Make each sentence connect more explicitly to the prior idea and task.
+- Use cautious qualifiers only when they clarify uncertainty, not as padding.
+- Open paragraphs with a debatable claim rather than a broad topic sentence.
+- Explain the mechanism or reasoning behind important claims.
+- Keep sentence rhythm varied: short claim, longer explanation, concise implication.
+
+The trace below shows how the system moves from interruption to revision to profile memory.
+
+| Step | Generated passage at interruption | Selected repair | Interpreter record | Memory state |
+| ---: | --- | --- | --- | --- |
+| 1 | `Bioethics is a broad field that deals with medicine, technology, public health, and social values.` | `Match latent style: Avoid generic academic filler.` | Prefer avoiding generic academic filler. | Local observation `1/3`; no global profile update. |
+| 3 | `Informed consent is also significant because it helps patients understand medical decisions.` | `Improve the argumentative transition.` | Make each sentence connect more explicitly to the prior idea and task. | Local observation `1/3`; no global profile update. |
+| 6 | `Reproductive ethics includes abortion, embryo selection, surrogacy, and genetic testing. These issues are complicated...` | Custom feedback: avoid vague intensifiers; let sentence logic carry emphasis. | Emphasis should come from reasoning rather than vague intensifiers. | Local observation `1/3`; no global profile update. |
+| 21 | `Bioethics is an important field because it helps society think about medicine and technology.` | Custom feedback: avoid generic academic filler. | Same preference observed in steps 1 and 11. | Observation `3/3`; promoted to recovered profile. |
+| 23 | `Informed consent is important in research and clinical care. It gives patients information and helps them make choices.` | `Improve the argumentative transition.` | Same connection preference observed in earlier steps. | Observation `3/3`; promoted to recovered profile. |
+| 29 | `Medical AI is a growing issue in bioethics because it can affect diagnosis, treatment, and trust.` | `Explain the mechanism behind the claim.` | Explain the mechanism or reasoning behind important claims. | Observation `3/3`; promoted to recovered profile. |
+
+Recovered helper profile for this example:
+
+1. Avoid generic academic filler.
+2. Make each sentence connect more explicitly to the prior idea and task.
+3. Use cautious qualifiers only when they clarify uncertainty, not as padding.
+4. Open paragraphs with a debatable claim rather than a broad topic sentence.
+5. Explain the mechanism or reasoning behind important claims.
+6. Keep sentence rhythm varied: short claim, longer explanation, concise implication.
+
 ## Ethical Implications
 
-This project is ethically interesting because it turns ordinary writing behavior into data about a person. That is both the opportunity and the risk. On the positive side, the profile can reduce prompting labor and give writers more control over AI assistance. On the negative side, a system could overinterpret small actions, preserve preferences the user no longer endorses, or make the writer feel watched while drafting.
+The main ethical issue is that the writing profile is built from behavioral data. An interruption may look small, but it can reveal information about a user's writing habits, confidence, style, academic needs, or even the kinds of arguments they struggle with. If this profile were stored insecurely, shared without consent, or used outside the writing context, it could become a privacy problem.
 
-The current prototype responds to those risks in several ways. Profiles are local, visible, and based on repeated observations rather than single actions. The interpreter output is shown so the user can see how the system is reasoning. Export makes the session reviewable. Still, the prototype does not yet include enough controls for editing, deleting, or rejecting inferred preferences. A more complete version should let users approve profile promotions, mark an inference as wrong, and separate preferences by genre or assignment.
+The second issue is overinterpretation. The system might treat one local revision as evidence of a stable preference, even when the user only wanted that change for one sentence or one assignment. This is why the prototype separates local observations from global profile memory and requires repeated evidence before promoting a preference. Still, this does not fully solve the problem. A more complete version should let users approve, edit, delete, or reject inferred profile items, and it should make clear which interruptions produced each profile claim.
 
-There is also an authorship concern. A tool that learns a user's style can support agency, but it can also smooth away productive struggle. I do not think the goal should be to make every sentence sound instantly polished. The better goal is to help writers notice their own preferences more clearly.
 
 ## Reflection and Limitations
 
@@ -163,7 +200,7 @@ I also learned something about my own writing and design process. Because I vibe
 
 The main limitation is that the strongest evaluation is simulated. The offline simulation demonstrates the mechanism, but it does not prove that real writers interrupt in stable enough patterns for accurate profile recovery. The prototype also depends on the quality of the interpreter. If the interpreter misreads the user's reason for stopping, the profile can drift. Another limitation is that the current profile treats preferences as fairly general, while real writing preferences are contextual: a lab report, reflective essay, and policy memo may require different voices.
 
-With another month, I would add user controls for approving, editing, and deleting inferred profile items. I would also run a small user study where participants draft with the tool, then judge whether the recovered profile actually describes them. Finally, I would improve the UI so each profile item links back to the concrete interruptions that produced it.
+In the future, I would add user controls for approving, editing, and deleting inferred profile items. I would also run a small user study where participants draft with the tool, then judge whether the recovered profile actually describes them. Finally, I would improve the UI so each profile item links back to the concrete interruptions that produced it.
 
 ## Run Instructions
 
