@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.23)  19 MAY 2026 22:41
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.23)  19 MAY 2026 22:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -240,8 +240,9 @@ File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) (c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count299
-) (./writing_helper_poster.aux)
-\openout1 = `writing_helper_poster.aux'.
+)
+No file writing_helper_poster_rescaled.aux.
+\openout1 = `writing_helper_poster_rescaled.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 61.
 LaTeX Font Info:    ... okay on input line 61.
@@ -261,7 +262,6 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 61.
 LaTeX Font Info:    ... okay on input line 61.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 61.
 LaTeX Font Info:    ... okay on input line 61.
-
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -303,9 +303,8 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 Package hyperref Info: Link coloring ON on input line 61.
- (./writing_helper_poster.out) (./writing_helper_poster.out)
 \@outlinefile=\write3
-\openout3 = `writing_helper_poster.out'.
+\openout3 = `writing_helper_poster_rescaled.out'.
 
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 87.
  (c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/ot1lmr.fd
@@ -329,71 +328,78 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <7> on input line 87.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <5> on input line 87.
-<poster_pipeline.png, id=4, 966.447pt x 225.6795pt>
+<poster_pipeline.png, id=4, 955.278pt x 225.6795pt>
 File: poster_pipeline.png Graphic file (type png)
 <use poster_pipeline.png>
-Package pdftex.def Info: poster_pipeline.png  used on input line 116.
-(pdftex.def)             Requested size: 1229.50517pt x 287.12631pt.
+Package pdftex.def Info: poster_pipeline.png  used on input line 121.
+(pdftex.def)             Requested size: 1229.50517pt x 290.47003pt.
 
-Underfull \hbox (badness 2359) in paragraph at lines 146--146
+Underfull \hbox (badness 2359) in paragraph at lines 151--151
 \T1/lmss/bx/n/20 can re-cover mean-ing-ful writing-preference
  []
 
-<poster_recovery_curve_mix.png, id=6, 1127.412pt x 404.712pt>
+<poster_recovery_curve_mix.png, id=6, 960.8625pt x 403.7265pt>
 File: poster_recovery_curve_mix.png Graphic file (type png)
 <use poster_recovery_curve_mix.png>
-Package pdftex.def Info: poster_recovery_curve_mix.png  used on input line 158.
-(pdftex.def)             Requested size: 970.67888pt x 348.45929pt.
-<poster_recovery_curve_common.png, id=7, 1127.412pt x 404.712pt>
-File: poster_recovery_curve_common.png Graphic file (type png)
-<use poster_recovery_curve_common.png>
-Package pdftex.def Info: poster_recovery_curve_common.png  used on input line 168.
-(pdftex.def)             Requested size: 650.03775pt x 233.34984pt.
-<poster_recovery_curve_rare.png, id=8, 1127.412pt x 404.712pt>
-File: poster_recovery_curve_rare.png Graphic file (type png)
-<use poster_recovery_curve_rare.png>
-Package pdftex.def Info: poster_recovery_curve_rare.png  used on input line 177.
-(pdftex.def)             Requested size: 650.03775pt x 233.34984pt.
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 225.
+Package pdftex.def Info: poster_recovery_curve_mix.png  used on input line 163.
+(pdftex.def)             Requested size: 970.67888pt x 407.86526pt.
+<poster_profile_frequency.png, id=7, 811.395pt x 336.384pt>
+File: poster_profile_frequency.png Graphic file (type png)
+<use poster_profile_frequency.png>
+Package pdftex.def Info: poster_profile_frequency.png  used on input line 173.
+(pdftex.def)             Requested size: 554.9029pt x 230.05208pt.
+<poster_top_recovered.png, id=8, 1318.599pt x 339.9975pt>
+File: poster_top_recovered.png Graphic file (type png)
+<use poster_top_recovered.png>
+Package pdftex.def Info: poster_top_recovered.png  used on input line 182.
+(pdftex.def)             Requested size: 554.9029pt x 143.0833pt.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 230.
 (c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Calculating math sizes for size <8.4> on input line 225.
+LaTeX Font Info:    Calculating math sizes for size <8.4> on input line 230.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8.4> on input line 225.
+(Font)              <8.4> on input line 230.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5.87996> on input line 225.
+(Font)              <5.87996> on input line 230.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <4.2> on input line 225.
+(Font)              <4.2> on input line 230.
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <9.4> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 233.
-LaTeX Font Info:    Calculating math sizes for size <9.4> on input line 233.
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 238.
+LaTeX Font Info:    Calculating math sizes for size <9.4> on input line 238.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9.4> on input line 233.
+(Font)              <9.4> on input line 238.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6.57996> on input line 233.
+(Font)              <6.57996> on input line 238.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <4.7> on input line 233.
+(Font)              <4.7> on input line 238.
  [1
 
-{c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc} <./poster_pipeline.png> <./poster_recovery_curve_mix.png> <./poster_recovery_curve_common.png> <./poster_recovery_curve_rare.png>] (./writing_helper_poster.aux)
+{c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc} <./poster_pipeline.png> <./poster_recovery_curve_mix.png> <./poster_profile_frequency.png> <./poster_top_recovered.png>] (./writing_helper_poster_rescaled.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-Package rerunfilecheck Info: File `writing_helper_poster.out' has not changed.
-(rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
+
+
+Package rerunfilecheck Warning: File `writing_helper_poster_rescaled.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `writing_helper_poster_rescaled.out':
+(rerunfilecheck)             Before: <no file>
+(rerunfilecheck)             After:  D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 9687 strings out of 469513
- 152403 string characters out of 5468178
- 603231 words of memory out of 5000000
- 38215 multiletter control sequences out of 15000+600000
+ 9680 strings out of 469513
+ 152203 string characters out of 5468178
+ 604179 words of memory out of 5000000
+ 38213 multiletter control sequences out of 15000+600000
  739445 words of font info for 99 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  75i,13n,79p,281b,461s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmss12.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmss17.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmss8.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt8.pfb>
-Output written on writing_helper_poster.pdf (1 page, 642124 bytes).
+Output written on writing_helper_poster_rescaled.pdf (1 page, 740205 bytes).
 PDF statistics:
  56 PDF objects out of 1000 (max. 8388607)
  32 compressed objects within 1 object stream

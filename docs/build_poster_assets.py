@@ -24,12 +24,15 @@ def load_payload():
     return json.loads(DATA.read_text(encoding="utf-8"))
 
 
-def save(fig, name):
-    fig.savefig(ROOT / name, dpi=220, bbox_inches="tight", facecolor="white")
+def save(fig, name, tight=True):
+    kwargs = {"dpi": 220, "facecolor": "white"}
+    if tight:
+        kwargs["bbox_inches"] = "tight"
+    fig.savefig(ROOT / name, **kwargs)
     plt.close(fig)
 
 
-def plot_recovery(payload, group=None, filename="poster_recovery_curve.png", title=None):
+def plot_recovery(payload, group=None, filename="poster_recovery_curve.png", title=None, y_max=None):
     if group:
         timeline = payload["summary"]["group_summaries"][group]["recovery_timeline"]
         label = group.title()
@@ -54,25 +57,32 @@ def plot_recovery(payload, group=None, filename="poster_recovery_curve.png", tit
             s=42,
             zorder=3,
         )
-    ax.axvline(18, color=RED, linestyle="--", linewidth=1.8, alpha=0.85)
-    ax.text(18.4, max(0.08, min(0.92, max_recall * 0.78)), "recovery requires\n3 similar observations", color=RED, fontsize=22, va="top")
     ax.set_title(title or f"{label} Profile Recovery Rate Over {max_step} Writing Steps", loc="left", fontsize=28, fontweight="bold", color=INK)
     ax.set_xlabel("Generated passage step", color=MUTED, fontsize=22)
     ax.set_ylabel("Average recovery rate", color=MUTED, fontsize=22)
-    ax.set_ylim(0, min(1.0, max(0.55, max_recall + 0.08)))
+    upper = y_max if y_max is not None else min(1.0, max(0.55, max_recall + 0.08))
+    ax.set_ylim(0, upper)
     ax.set_xlim(1, max_step)
     ax.grid(True, color="#e0d8c7", linewidth=0.8)
     ax.spines[["top", "right"]].set_visible(False)
     ax.tick_params(colors=MUTED, labelsize=18)
     if filename == "poster_recovery_curve.png":
         fig.savefig(ROOT / "avg_recovery_rate_line_plot.svg", bbox_inches="tight", facecolor="white")
-    save(fig, filename)
+    save(fig, filename, tight=False)
 
 
 def plot_recovery_groups(payload):
     plot_recovery(payload, filename="poster_recovery_curve.png", title="Overall Profile Recovery Rate Over 50 Writing Steps")
-    plot_recovery(payload, group="common", filename="poster_recovery_curve_common.png")
-    plot_recovery(payload, group="rare", filename="poster_recovery_curve_rare.png", title="Rare Personal Profile Recovery Rate Over 50 Writing Steps")
+    comparison_y_max = min(
+        1.0,
+        max(
+            0.55,
+            max(item["average_recall_ratio"] for item in payload["summary"]["group_summaries"]["common"]["recovery_timeline"]) + 0.08,
+            max(item["average_recall_ratio"] for item in payload["summary"]["group_summaries"]["rare"]["recovery_timeline"]) + 0.08,
+        ),
+    )
+    plot_recovery(payload, group="common", filename="poster_recovery_curve_common.png", y_max=comparison_y_max)
+    plot_recovery(payload, group="rare", filename="poster_recovery_curve_rare.png", title="Rare Personal Profile Recovery Rate Over 50 Writing Steps", y_max=comparison_y_max)
     plot_recovery(payload, group="mix", filename="poster_recovery_curve_mix.png", title="Mixed Profile Recovery Rate Over 50 Writing Steps")
 
 
@@ -91,14 +101,14 @@ def plot_profile_frequency(payload):
     }
     labels = [short_labels.get(item[0], item[0]) for item in top]
     values = [item[1] for item in top]
-    wrapped = ["\n".join(_wrap(label, 22)) for label in labels]
-    fig, ax = plt.subplots(figsize=(10.8, 4.7))
+    wrapped = ["\n".join(_wrap(label, 18)) for label in labels]
+    fig, ax = plt.subplots(figsize=(11.8, 5.0))
     bars = ax.barh(range(len(values)), values, color=BLUE)
-    ax.bar_label(bars, labels=[f"{v}%" for v in values], padding=4, color=INK, fontsize=16)
-    ax.set_yticks(range(len(labels)), wrapped, fontsize=16)
+    ax.bar_label(bars, labels=[f"{v}%" for v in values], padding=4, color=INK, fontsize=14)
+    ax.set_yticks(range(len(labels)), wrapped, fontsize=13)
     ax.set_xlim(0, max(values) + 12)
-    ax.set_title("Most Frequent Hidden Writing Preferences", loc="left", fontsize=23, fontweight="bold", color=INK)
-    ax.set_xlabel("Simulated profiles containing preference", color=MUTED, fontsize=17)
+    ax.set_title("Most Frequent Hidden Writing Preferences", loc="left", fontsize=20, fontweight="bold", color=INK)
+    ax.set_xlabel("Simulated profiles containing preference", color=MUTED, fontsize=14)
     ax.grid(axis="x", color="#e0d8c7", linewidth=0.8)
     ax.spines[["top", "right", "left"]].set_visible(False)
     ax.tick_params(axis="x", colors=MUTED)
@@ -123,13 +133,13 @@ def plot_top_recovered_preferences(payload):
     labels = [short_labels.get(item[0], item[0]) for item in top]
     values = [item[1] / total * 100 for item in top]
 
-    fig, ax = plt.subplots(figsize=(10.8, 4.7))
+    fig, ax = plt.subplots(figsize=(11.8, 5.0))
     bars = ax.barh(range(len(values)), values, color=GREEN)
-    ax.bar_label(bars, labels=[f"{v:.0f}%" for v in values], padding=4, color=INK, fontsize=18)
-    ax.set_yticks(range(len(labels)), labels, fontsize=18)
+    ax.bar_label(bars, labels=[f"{v:.0f}%" for v in values], padding=4, color=INK, fontsize=16)
+    ax.set_yticks(range(len(labels)), labels, fontsize=16)
     ax.set_xlim(0, max(values) + 9)
-    ax.set_title("Top Recovered Writing Preferences", loc="left", fontsize=23, fontweight="bold", color=INK)
-    ax.set_xlabel("Simulated users whose final profile recovered item", color=MUTED, fontsize=16)
+    ax.set_title("Top Recovered Writing Preferences", loc="left", fontsize=20, fontweight="bold", color=INK)
+    ax.set_xlabel("Simulated users whose final profile recovered item", color=MUTED, fontsize=14)
     ax.grid(axis="x", color="#e0d8c7", linewidth=0.8)
     ax.spines[["top", "right", "left"]].set_visible(False)
     ax.tick_params(axis="x", colors=MUTED, labelsize=14)
@@ -189,12 +199,12 @@ def plot_pipeline_image():
     fig, ax = plt.subplots(figsize=(16.8, 3.8))
     ax.axis("off")
     labels = [
-        ("1", "Input", BLUE),
+        ("1", "Input\n(user)", BLUE),
         ("2", "Generate", GREEN),
-        ("3", "Stop", RED),
+        ("3", "Stop\n(user)", RED),
         ("4", "Read", GOLD),
         ("5", "Repair", BLUE),
-        ("6", "Pick", RED),
+        ("6", "Pick\n(user)", RED),
         ("7", "Infer", GOLD),
         ("8", "Memory", GREEN),
         ("9", "Resume", INK),
@@ -205,10 +215,10 @@ def plot_pipeline_image():
     for i, ((num, title, color), x) in enumerate(zip(labels, xs)):
         ax.scatter([x], [y], s=1350, color=color, edgecolor="white", linewidth=2.2, zorder=3)
         ax.text(x, y + 0.01, num, ha="center", va="center", color="white", fontsize=25, fontweight="bold", zorder=4)
-        ax.text(x, 0.91, title, ha="center", va="center", color=INK, fontsize=20, fontweight="bold")
+        ax.text(x, 0.91, title, ha="center", va="center", color=INK, fontsize=18, fontweight="bold", linespacing=0.9)
         if i < len(labels) - 1:
             ax.annotate("", xy=(xs[i + 1] - 0.035, y), xytext=(x + 0.035, y), arrowprops=dict(arrowstyle="->", lw=2.1, color=INK), zorder=2)
-    ax.text(0.5, 0.18, "task -> generate -> stop -> interpret -> repair -> choose -> infer -> memory -> resume", ha="center", va="center", color=MUTED, fontsize=19)
+    ax.text(0.5, 0.18, "task input (user) -> generate -> stop (user) -> interpret -> repair -> pick (user) -> infer -> memory -> resume", ha="center", va="center", color=MUTED, fontsize=17)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     save(fig, "poster_pipeline.png")

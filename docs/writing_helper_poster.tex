@@ -113,11 +113,6 @@
   \begin{center}
   \includegraphics[width=0.76\linewidth]{poster_pipeline.png}
   \end{center}
-  \vspace{0.04in}
-  \begin{minipage}[t]{0.95\linewidth}
-    \Lead{System design}
-    \BodySmall{The system is a multi-agent loop built with AutoGen Core: generate, interrupt, interpret, repair, infer, remember. The prototype keeps generated text, repairs, explanation, and profile memory visible.}
-  \end{minipage}
 }
 
 \vspace{0.08in}
@@ -154,13 +149,11 @@
 \vspace{0.08in}
 
 \PanelH{7.25in}{
-  \Section{Profile Recovery Rate}
-  \vspace{0.12in}
+  \Section{Mixed Profile Recovery Rate}
+  \BodySmall{The full evaluation includes common, rare personal, and mixed hidden-profile groups. This poster shows the mixed-group result, where each profile combines rare style preferences with common academic-writing preferences.}
+  \vspace{0.05in}
   \begin{center}
-    \includegraphics[width=0.48\linewidth]{poster_recovery_curve.png}\hfill
-    \includegraphics[width=0.48\linewidth]{poster_recovery_curve_common.png}\\[0.10in]
-    \includegraphics[width=0.48\linewidth]{poster_recovery_curve_rare.png}\hfill
-    \includegraphics[width=0.48\linewidth]{poster_recovery_curve_mix.png}
+    \includegraphics[width=0.60\linewidth]{poster_recovery_curve_mix.png}
   \end{center}
 }
 
@@ -168,18 +161,18 @@
 
 \begin{minipage}[t]{0.49\linewidth}
 \PanelH{4.25in}{
-  \Section{Hidden Preferences}
+  \Section{Common Group Recovery}
   \begin{center}
-  \includegraphics[width=0.70\linewidth]{poster_profile_frequency.png}
+  \includegraphics[width=0.82\linewidth]{poster_recovery_curve_common.png}
   \end{center}
 }
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.49\linewidth}
 \PanelH{4.25in}{
-  \Section{Top Recovered Preferences}
+  \Section{Rare Group Recovery}
   \begin{center}
-  \includegraphics[width=0.70\linewidth]{poster_top_recovered.png}
+  \includegraphics[width=0.82\linewidth]{poster_recovery_curve_rare.png}
   \end{center}
 }
 \end{minipage}
