@@ -944,17 +944,17 @@ def _offline_domain_passage(topic: str, step_index: int, satisfies_profile: bool
             (
                 f"{topic.capitalize()} includes an important debate about {issue}. "
                 f"Many scholars have different views, and the issue has broad implications for theory and practice. "
-                f"The paragraph names the controversy but does not yet explain the mechanism, evidence, or counterargument."
+                f"The controversy remains difficult because evidence, values, and institutional pressures point in different directions."
             ),
             (
                 f"Another major issue in {topic} is {issue}. "
                 f"It matters because it affects people, institutions, and future research. "
-                f"The draft sounds relevant, but it relies on broad claims instead of showing how the argument works."
+                f"The issue is important, but its practical consequences depend on context and careful judgment."
             ),
             (
-                f"The essay next turns to {issue} as a complicated part of {topic}. "
+                f"{issue.capitalize()} is a complicated part of {topic}. "
                 f"There are benefits and risks on both sides, and the topic deserves careful attention. "
-                f"This version introduces the content, but it does not yet make the evidence or objection do analytical work."
+                f"The debate requires evidence, caution, and attention to competing objections."
             ),
         ]
     return templates[(step_index - 1) % len(templates)]
@@ -1211,7 +1211,7 @@ def _offline_bioethics_passage(step_index: int, profile_item: str, satisfies_pro
         (
             "Overall, bioethics studies difficult questions about medicine and society. "
             "Its debates are important because they shape how people live, suffer, choose, and receive care. "
-            "A good essay should consider different views and evidence."
+            "Different ethical positions need evidence, limits, and a clear account of responsibility."
         ),
     ]
     strong_passages = [
@@ -1291,7 +1291,7 @@ def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: st
     if "comma" in lowered or "punctuation" in lowered or "semicolon" in lowered or "balanced parts" in lowered:
         return (
             f"{issue_title} creates a practical pressure, because {mechanism[0].lower() + mechanism[1:]} "
-            f"The evidence points in one direction, the counterpressure in another, so the claim has to hold both parts together. "
+            f"The evidence points in one direction, the counterpressure in another, so both parts have to remain visible. "
             f"That tension makes the conclusion narrower, but more defensible."
         )
     if "emotion" in lowered or "warmer" in lowered or "vulnerable" in lowered or "human stake" in lowered:
@@ -1302,15 +1302,15 @@ def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: st
         )
     if "metaphor" in lowered or "image" in lowered or "sensory" in lowered or "scene" in lowered:
         return (
-            f"{issue_title} works like a narrow lens: it makes some consequences of {topic} visible while pushing others to the edge of the frame. "
+            f"{issue_title} works like a narrow lens: some consequences become visible while others move to the edge of the frame. "
             f"{mechanism} "
-            f"The image matters because the debate is not only about what can be seen, but also about what the chosen frame leaves out."
+            f"The ethical pressure comes from what the chosen frame leaves out."
         )
     if "uncertainty through structure" in lowered or "unresolved" in lowered:
         return (
-            f"{issue_title} supports a limited claim rather than a settled conclusion. "
+            f"{issue_title} supports a limited position rather than a settled conclusion. "
             f"{evidence} "
-            f"Still, {counter.lower()}, which leaves the argument persuasive only within the conditions the evidence can actually cover."
+            f"Still, {counter.lower()}, which leaves the conclusion persuasive only within the conditions the evidence can actually cover."
         )
     if "first-person plural" in lowered or "shared interpretive" in lowered:
         return (
@@ -1328,17 +1328,17 @@ def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: st
         return (
             f"{issue_title} changes the stakes of {topic} by moving the debate from general concern to institutional consequence. "
             f"{mechanism} "
-            f"That shift gives the argument a new task: to explain who gains authority, who bears risk, and what evidence can justify the tradeoff."
+            f"The remaining question is who gains authority, who bears risk, and what evidence can justify the tradeoff."
         )
     if "specific" in lowered or "precise" in lowered or "vague" in lowered:
         return (
             f"{issue_title} should be judged through concrete evidence rather than broad claims about impact. "
             f"{evidence} "
-            f"That detail makes the claim testable because it names the mechanism, the affected setting, and the limit on what can be concluded."
+            f"The practical limit becomes clearer when the mechanism and affected setting are named together."
         )
     if "tone" in lowered or "measured" in lowered or "restrained" in lowered or "qualification" in lowered:
         return (
-            f"{issue_title} gives the argument a plausible direction, but the evidence does not support an absolute claim. "
+            f"{issue_title} creates a serious concern, but the evidence does not support an absolute conclusion. "
             f"{evidence} "
             f"The safer conclusion is that {topic} can clarify the problem while still leaving room for context, method, and counterexample."
         )
@@ -1346,29 +1346,29 @@ def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: st
         return (
             f"{issue_title} shows the tradeoff in concrete terms. "
             f"{mechanism} "
-            f"The same arrangement can improve consistency while narrowing judgment in borderline cases, so the example carries the argument rather than merely illustrating it."
+            f"The same arrangement can improve consistency while narrowing judgment in borderline cases."
         )
     if "mechanism" in lowered or "causal" in lowered or "reasoning" in lowered:
         return (
             f"{issue_title} matters because the causal path is institutional. "
             f"{mechanism} "
-            f"Once that mechanism is visible, the claim no longer rests on importance alone; it explains how one change produces another."
+            f"Once that mechanism is visible, importance alone is no longer enough; one institutional change produces another."
         )
     if "transition" in lowered or "connect" in lowered or "logical relation" in lowered:
         return (
             f"That earlier concern leads directly to {issue}, where the evidence has to do more than name a problem. "
             f"{mechanism} "
-            f"The connection matters because the argument moves from what is disputed to why the dispute persists."
+            f"The dispute persists because the same evidence can distribute authority and risk in different ways."
         )
     if "counter" in lowered or "opposing" in lowered or "objections" in lowered:
         return (
-            f"A skeptical reader could accept the evidence about {issue} and still resist the conclusion. "
+            f"A skeptical response could accept the evidence about {issue} and still resist the conclusion. "
             f"{counter} "
-            f"The response is not to dismiss that objection, but to show why {evidence[0].lower() + evidence[1:]} changes the balance of the claim."
+            f"Even so, {evidence[0].lower() + evidence[1:]} changes the balance of the decision."
         )
     if "paragraph" in lowered or "structure" in lowered or "topic sentence" in lowered or "one governing idea" in lowered:
         return (
-            f"{issue_title} is not merely another topic in {topic}; it is a test of how the field justifies authority. "
+            f"{issue_title} tests how authority is justified in {topic}. "
             f"{mechanism} "
             f"{evidence} "
         )
@@ -1379,7 +1379,7 @@ def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: st
             f"The implication is narrow but sharp: evidence matters only when it explains who carries the risk."
         )
     return (
-        f"{issue_title} gives the essay a more accountable claim about {topic}. "
+        f"{issue_title} turns {topic} into a question of accountable decision-making. "
         f"{mechanism} "
         f"{evidence} "
     )
@@ -1543,7 +1543,7 @@ def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dic
             "reason_id": "OFFLINE_PROFILE_MATCH",
             "reason": f"Recover hidden profile preference: {target_item}",
             "explanation": f"The simulator interrupted because the draft missed: {missed_item}",
-            "replacement_text": _offline_style_aligned_passage("the essay topic", 1, target_item),
+            "replacement_text": _offline_style_aligned_passage("the topic", 1, target_item),
             "option_kind": "reason",
             "category": "profile",
         },
@@ -1553,9 +1553,9 @@ def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dic
             "reason": "Make a local passage-level fix.",
             "explanation": "This option repairs the current passage but is less useful for long-term profile recovery.",
             "replacement_text": (
-                "The revised passage states a clearer claim before adding context. "
-                "It identifies what is at stake, explains why the evidence matters, and keeps the paragraph focused on one analytical move. "
-                "That local repair makes the draft easier to continue."
+                "The issue becomes sharper when the practical stake appears before the background context. "
+                "Evidence matters most when it shows who gains authority, who carries risk, and what limits the decision. "
+                "That structure keeps the discussion focused on consequence rather than general importance."
             ),
             "option_kind": "reason",
             "category": "local",

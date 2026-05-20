@@ -13,15 +13,15 @@ This report keeps the original recovery audit and adds the common, rare personal
 
 | Group | Profiles | Avg recall | Interruptions | Manual actions | Avg elapsed seconds |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| common | `50` | `0.380` | `1625` | `114` | `3515.00` |
-| rare | `50` | `0.177` | `1836` | `74` | `3526.07` |
-| mix | `50` | `0.296` | `1703` | `128` | `3576.80` |
+| common | `50` | `0.387` | `1634` | `115` | `3515.00` |
+| rare | `50` | `0.171` | `1843` | `76` | `3526.07` |
+| mix | `50` | `0.306` | `1699` | `136` | `3576.80` |
 
 ## Overall Recovery
 
-- Average recall: `0.284`
-- Total interruptions: `5164`
-- Manual/custom actions: `316`
+- Average recall: `0.288`
+- Total interruptions: `5176`
+- Manual/custom actions: `327`
 
 ## Profile Size Check
 
@@ -40,22 +40,22 @@ This report keeps the original recovery audit and adds the common, rare personal
 - Exact stopping time: `104.46` seconds
 - Repair or simulator decision: The selected feedback indicates this reusable writing preference: Avoid generic academic filler.
 
-Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Patient autonomy gives the essay a more accountable claim about bioethics. Clinical authority shapes which choices appear reasonable to patients before consent is formally requested. Hospital ethics cases show that formal choice can coexist with pressure, confusion, and unequal access to advocacy.</mark>
+Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Patient autonomy turns bioethics into a question of accountable decision-making. Clinical authority shapes which choices appear reasonable to patients before consent is formally requested. Hospital ethics cases show that formal choice can coexist with pressure, confusion, and unequal access to advocacy.</mark>
 
 ### Rare Profile Sample
 
 - User: `fake_rare_001`
 - Step: `1`
 - Exact stopping time: `102.54` seconds
-- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Support abstract points with concrete examples when needed.
+- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Use more specific wording instead of broad or generic phrasing.
 
-Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Patient autonomy shows the tradeoff in concrete terms. Clinical authority shapes which choices appear reasonable to patients before consent is formally requested. The same arrangement can improve consistency while narrowing judgment in borderline cases, so the example carries the argument rather than merely illustrating it.</mark>
+Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Patient autonomy should be judged through concrete evidence rather than broad claims about impact. Hospital ethics cases show that formal choice can coexist with pressure, confusion, and unequal access to advocacy. The practical limit becomes clearer when the mechanism and affected setting are named together.</mark>
 
 ### Mix Profile Sample
 
 - User: `fake_mix_001`
 - Step: `1`
 - Exact stopping time: `102.63` seconds
-- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Use more specific wording instead of broad or generic phrasing.
+- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Make counterarguments concrete enough that they feel like real objections.
 
-Human-computer interaction includes an important debate about usability. Many scholars have different views, and the issue has broad implications for theory and practice. The paragraph names the controversy but does not yet explain the mechanism, evidence, or counterargument. <mark>Usability should be judged through concrete evidence rather than broad claims about impact. User studies, task completion data, and error logs show where design intentions break down. That detail makes the claim testable because it names the mechanism, the affected setting, and the limit on what can be concluded.</mark>
+Human-computer interaction includes an important debate about usability. Many scholars have different views, and the issue has broad implications for theory and practice. The controversy remains difficult because evidence, values, and institutional pressures point in different directions. <mark>Usability shows the tradeoff in concrete terms. Usability affects behavior by shaping attention, error recovery, and the cost of changing a decision. The same arrangement can improve consistency while narrowing judgment in borderline cases.</mark>

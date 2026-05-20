@@ -700,6 +700,10 @@ Constraints:
 - Make the options noticeably different from each other.
 - Use the reason diagnoses as distinct revision directions instead of repeating the same diagnosis.
 - Rewrite only the interrupted sentence or immediate local span.
+- replacement_text must be paste-ready prose that can directly replace the interrupted text.
+- replacement_text must stay inside the subject matter of the user's draft.
+- Do not use replacement_text to explain the revision, interpret the user's intent, or describe a writing move.
+- In replacement_text, do not mention "the essay", "the draft", "the passage", "the paragraph", "the sentence", "the revision", "the writer", "the user", or "the reader".
 - Do not copy the full task description, bullet lists, or prompt text into the replacement.
 - Each replacement_text must be short: at most two sentences and preferably under {MAX_REPLACEMENT_WORDS} words.
 - Respect the current local passage preferences when they help.
@@ -753,7 +757,8 @@ Current passage:
 User revision request:
 {custom_instruction}
 
-Return only the replacement sentence or short local revision.
+Return only paste-ready replacement prose for the interrupted sentence or short local span.
+Do not explain the revision or mention the essay, draft, passage, paragraph, sentence, writer, user, or reader.
 """
         try:
             text = await self.complete(prompt)
@@ -813,31 +818,31 @@ Return only the replacement sentence or short local revision.
         compact = " ".join(sentence.split()).rstrip(".!?")
 
         if not compact:
-            return "Continue with a clearer sentence that fits the task."
+            return "The issue becomes clearer when its practical stakes are named directly."
 
         if reason_id == "LANG_REPETITION":
-            return f"{compact}, but with a fresher move instead of repeating the previous point."
+            return f"{compact}, while the next consequence changes who carries responsibility."
         if reason_id == "LANG_TOO_GENERAL":
-            return f"{compact}, stated with more specific and concrete wording."
+            return f"{compact}, especially where institutional rules shape what choices are available in practice."
         if reason_id == "LANG_TOO_SPECIFIC":
-            return f"{compact}, but phrased a bit more broadly so the draft stays flexible."
+            return f"{compact}, though the same pressure appears across several related cases."
         if reason_id == "LANG_TONE":
-            return f"{compact}, expressed in a tone that feels more natural for the piece."
+            return f"{compact}, with real consequences for people who must act under uncertainty."
         if reason_id == "LANG_CONCISE":
             first_clause = compact.split(",")[0].strip()
             return f"{first_clause}."
         if reason_id == "CONTENT_EXAMPLE":
-            return f"{compact}, illustrated with a concrete example."
+            return f"{compact}, as shown when formal safeguards exist but access to advocacy remains uneven."
         if reason_id == "CONTENT_REFINED":
-            return f"{compact}, recast as a more precise and refined point."
+            return f"{compact}, because the central problem is not capacity alone but the authority created around it."
         if reason_id == "CONTENT_OPPOSITE":
-            return f"{compact}, while acknowledging the opposing pressure that makes the point more convincing."
+            return f"{compact}, although that safeguard can also narrow judgment in borderline cases."
         if reason_id == "CONTENT_MECHANISM":
-            return f"{compact}, with a clearer explanation of why the claim holds."
+            return f"{compact}, because rules, incentives, and expertise determine how the choice reaches the patient."
         if reason_id == "CONTENT_TRANSITION":
             prefix = "Building on that point, " if previous_sentence else "From there, "
             return f"{prefix}{compact[:1].lower() + compact[1:] if len(compact) > 1 else compact.lower()}."
-        return f"{compact}, revised to better fit {task}."
+        return f"{compact}, where the practical consequence matters more than the general topic."
 
     def _sanitize_replacement_text(self, replacement_text: str, state: SessionState, reason_id: str) -> str:
         normalized = " ".join(replacement_text.split()).strip()
@@ -853,6 +858,18 @@ Return only the replacement sentence or short local revision.
             "current accepted text:",
             "user task:",
             "interpreter result:",
+            "the essay",
+            "the draft",
+            "the passage",
+            "the paragraph",
+            "the sentence",
+            "the revision",
+            "the writer",
+            "the user",
+            "the reader",
+            "this option",
+            "this revision",
+            "writing move",
         ]
         if any(marker in lowered for marker in forbidden_markers):
             return self._fallback_rewrite_for_reason(state, reason_id)

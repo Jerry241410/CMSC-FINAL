@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.23)  19 MAY 2026 21:16
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.23)  19 MAY 2026 21:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -364,11 +364,11 @@ File: poster_profile_frequency.png Graphic file (type png)
 <use poster_profile_frequency.png>
 Package pdftex.def Info: poster_profile_frequency.png  used on input line 175.
 (pdftex.def)             Requested size: 554.9029pt x 230.05208pt.
-<poster_top_recovered.png, id=11, 1265.382pt x 339.9975pt>
+<poster_top_recovered.png, id=11, 1318.599pt x 339.9975pt>
 File: poster_top_recovered.png Graphic file (type png)
 <use poster_top_recovered.png>
 Package pdftex.def Info: poster_top_recovered.png  used on input line 184.
-(pdftex.def)             Requested size: 554.9029pt x 149.09612pt.
+(pdftex.def)             Requested size: 554.9029pt x 143.0833pt.
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 232.
 (c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
@@ -408,7 +408,7 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  75i,13n,79p,281b,461s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmss12.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmss17.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmss8.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb><c:/Users/Jerry/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt8.pfb>
-Output written on writing_helper_poster.pdf (1 page, 1227783 bytes).
+Output written on writing_helper_poster.pdf (1 page, 1231821 bytes).
 PDF statistics:
  62 PDF objects out of 1000 (max. 8388607)
  32 compressed objects within 1 object stream
