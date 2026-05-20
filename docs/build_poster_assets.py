@@ -7,7 +7,9 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parent
-DATA = ROOT / "poster_simulation.json"
+PROJECT_ROOT = ROOT.parent
+FULL_RUN_DATA = PROJECT_ROOT / "simulation_outputs" / "profile_group_50x50_offline.json"
+DATA = FULL_RUN_DATA if FULL_RUN_DATA.exists() else ROOT / "poster_simulation.json"
 
 BLUE = "#315f85"
 GREEN = "#37715f"
@@ -27,25 +29,51 @@ def save(fig, name):
     plt.close(fig)
 
 
-def plot_recovery(payload):
-    timeline = payload["summary"]["recovery_timeline"]
+def plot_recovery(payload, group=None, filename="poster_recovery_curve.png", title=None):
+    if group:
+        timeline = payload["summary"]["group_summaries"][group]["recovery_timeline"]
+        label = group.title()
+    else:
+        timeline = payload["summary"]["recovery_timeline"]
+        label = "Overall"
     steps = [item["step_index"] for item in timeline]
     recalls = [item["average_recall_ratio"] for item in timeline]
+    max_step = max(steps) if steps else 50
+    max_recall = max(recalls) if recalls else 0.0
     fig, ax = plt.subplots(figsize=(15.6, 5.6))
     ax.fill_between(steps, recalls, color=GREEN, alpha=0.16)
     ax.plot(steps, recalls, color=GREEN, linewidth=3.3)
-    ax.scatter(steps[18:], recalls[18:], color=GOLD, edgecolor=INK, linewidth=0.7, s=42, zorder=3)
+    highlighted_points = [(step, recall) for step, recall in zip(steps, recalls) if step >= 19]
+    if highlighted_points:
+        ax.scatter(
+            [item[0] for item in highlighted_points],
+            [item[1] for item in highlighted_points],
+            color=GOLD,
+            edgecolor=INK,
+            linewidth=0.7,
+            s=42,
+            zorder=3,
+        )
     ax.axvline(18, color=RED, linestyle="--", linewidth=1.8, alpha=0.85)
-    ax.text(18.25, 0.49, "recovery requires\n3 similar observations", color=RED, fontsize=22, va="top")
-    ax.set_title("Profile Recovery Rate Over 30 Writing Steps", loc="left", fontsize=28, fontweight="bold", color=INK)
+    ax.text(18.4, max(0.08, min(0.92, max_recall * 0.78)), "recovery requires\n3 similar observations", color=RED, fontsize=22, va="top")
+    ax.set_title(title or f"{label} Profile Recovery Rate Over {max_step} Writing Steps", loc="left", fontsize=28, fontweight="bold", color=INK)
     ax.set_xlabel("Generated passage step", color=MUTED, fontsize=22)
     ax.set_ylabel("Average recovery rate", color=MUTED, fontsize=22)
-    ax.set_ylim(0, 0.55)
-    ax.set_xlim(1, 30)
+    ax.set_ylim(0, min(1.0, max(0.55, max_recall + 0.08)))
+    ax.set_xlim(1, max_step)
     ax.grid(True, color="#e0d8c7", linewidth=0.8)
     ax.spines[["top", "right"]].set_visible(False)
     ax.tick_params(colors=MUTED, labelsize=18)
-    save(fig, "poster_recovery_curve.png")
+    if filename == "poster_recovery_curve.png":
+        fig.savefig(ROOT / "avg_recovery_rate_line_plot.svg", bbox_inches="tight", facecolor="white")
+    save(fig, filename)
+
+
+def plot_recovery_groups(payload):
+    plot_recovery(payload, filename="poster_recovery_curve.png", title="Overall Profile Recovery Rate Over 50 Writing Steps")
+    plot_recovery(payload, group="common", filename="poster_recovery_curve_common.png")
+    plot_recovery(payload, group="rare", filename="poster_recovery_curve_rare.png", title="Rare Personal Profile Recovery Rate Over 50 Writing Steps")
+    plot_recovery(payload, group="mix", filename="poster_recovery_curve_mix.png", title="Mixed Profile Recovery Rate Over 50 Writing Steps")
 
 
 def plot_profile_frequency(payload):
@@ -141,7 +169,7 @@ def plot_action_mix(payload):
     ax.set_yticks(y, labels, fontsize=17, color=INK)
     ax.invert_yaxis()
     ax.set_title("Feedback actions and profile inclusion", loc="left", fontsize=23, fontweight="bold", color=INK)
-    ax.set_xlabel("Count across 100 simulated users", color=MUTED, fontsize=17)
+    ax.set_xlabel(f"Count across {len(payload['results'])} simulated profiles", color=MUTED, fontsize=17)
     ax.bar_label(
         bars,
         labels=[f"{v} ({v / total:.0%})" for v, total in zip(values, denominators)],
@@ -206,7 +234,7 @@ def _wrap(text, width):
 
 def main():
     payload = load_payload()
-    plot_recovery(payload)
+    plot_recovery_groups(payload)
     plot_profile_frequency(payload)
     plot_top_recovered_preferences(payload)
     plot_action_mix(payload)

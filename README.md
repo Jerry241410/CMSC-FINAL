@@ -164,7 +164,7 @@ Most common exact profile items:
 | Support abstract points with concrete examples when needed. | `33%` |
 | Avoid generic academic filler. | `29%` |
 
-![Average recovery rate line plot](docs/avg_recovery_rate_line_plot.svg)
+![Overall 50-step recovery plot](docs/poster_recovery_curve.png)
 
 Current full 50-step evaluation:
 
@@ -175,6 +175,14 @@ The updated evaluation now tests `50` writing steps instead of `30`. It keeps th
 | Common profile group | `50` | `50` | `0.857` | `1477` | `297` |
 | Rare personal group | `50` | `50` | `0.815` | `1465` | `364` |
 | Mixed group | `50` | `50` | `0.879` | `1472` | `355` |
+
+Group recovery plots:
+
+![Common group 50-step recovery plot](docs/poster_recovery_curve_common.png)
+
+![Rare personal group 50-step recovery plot](docs/poster_recovery_curve_rare.png)
+
+![Mixed group 50-step recovery plot](docs/poster_recovery_curve_mix.png)
 
 Across all `150` simulated profiles, final average recall was `0.851` after `50` steps, with `4414` interruptions and `1016` manual/custom actions. This was the full offline evaluation run, not the smoke test. The exported report is in `simulation_outputs/profile_group_50x50_offline/simulation_report.md`; it includes exact stopping times and sample traces where the text before the stop is normal text and the replacement is marked with `<mark>...</mark>` for yellow highlighting in Markdown/HTML viewers. In those samples, the `Repair or simulator decision` field uses the interpreter's interpretation rather than only the simulator's selected replacement text.
 

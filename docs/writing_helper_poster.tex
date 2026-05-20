@@ -125,13 +125,13 @@
 \begin{minipage}[t]{0.37\linewidth}
 \PanelH{3.88in}{
   \Section{Synthetic Profile Data}
-  \Metric{0.44\linewidth}{100}{simulated writers}\hfill
-  \Metric{0.44\linewidth}{30}{steps each}
+  \Metric{0.44\linewidth}{150}{simulated profiles}\hfill
+  \Metric{0.44\linewidth}{50}{steps each}
   \vspace{0.08in}
-  \Metric{0.44\linewidth}{2486}{interruptions}\hfill
-  \Metric{0.44\linewidth}{10.47}{target items}\par
+  \Metric{0.44\linewidth}{4414}{interruptions}\hfill
+  \Metric{0.44\linewidth}{9--12}{target items}\par
   \vspace{0.08in}
-  \BodySmall{Each fake user receives a hidden writing-preference profile. The helper observes interruptions and repairs, then tries to recover repeated preferences.}
+  \BodySmall{Each fake user receives a common, rare personal, or mixed hidden writing-preference profile. The helper observes interruptions and repairs, then tries to recover repeated preferences.}
 }
 \end{minipage}
 \hfill
@@ -155,9 +155,12 @@
 
 \PanelH{7.25in}{
   \Section{Profile Recovery Rate}
-  \vspace{0.32in}
+  \vspace{0.12in}
   \begin{center}
-    \includegraphics[width=0.66\linewidth]{poster_recovery_curve.png}
+    \includegraphics[width=0.48\linewidth]{poster_recovery_curve.png}\hfill
+    \includegraphics[width=0.48\linewidth]{poster_recovery_curve_common.png}\\[0.10in]
+    \includegraphics[width=0.48\linewidth]{poster_recovery_curve_rare.png}\hfill
+    \includegraphics[width=0.48\linewidth]{poster_recovery_curve_mix.png}
   \end{center}
 }
 
