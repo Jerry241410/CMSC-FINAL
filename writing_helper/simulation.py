@@ -1264,6 +1264,42 @@ def _offline_bioethics_passage(step_index: int, profile_item: str, satisfies_pro
 
 def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: str) -> str:
     lowered = profile_item.lower()
+    if "comma" in lowered or "punctuation" in lowered or "semicolon" in lowered or "balanced parts" in lowered:
+        return (
+            f"The stronger version treats {topic} as a pressure point, not just a topic, because the evidence changes what the writer can responsibly claim. "
+            f"Its rhythm holds two ideas together, the practical stake and the analytical limit, so the sentence feels deliberate rather than merely long. "
+            f"That punctuation gives the paragraph a controlled pause before the conclusion."
+        )
+    if "emotion" in lowered or "warmer" in lowered or "vulnerable" in lowered or "human stake" in lowered:
+        return (
+            f"The revision keeps the analysis of {topic} grounded in people who must live with its consequences. "
+            f"It names harm without turning suffering into decoration, and it lets the human stake clarify why the argument matters. "
+            f"The tone becomes warmer while still remaining evidence-minded."
+        )
+    if "metaphor" in lowered or "image" in lowered or "sensory" in lowered or "scene" in lowered:
+        return (
+            f"The paragraph begins with a concrete scene: a reader facing evidence that points in several directions at once. "
+            f"From there, {topic} becomes less like a list of positions and more like a lens that brings some pressures into focus while leaving others blurred. "
+            f"The image helps the abstract claim become easier to follow."
+        )
+    if "uncertainty through structure" in lowered or "unresolved" in lowered:
+        return (
+            f"The passage does not pretend that {topic} settles into a clean conclusion. "
+            f"It builds toward the strongest claim, then leaves a visible qualification in the final clause, where the evidence remains incomplete. "
+            f"That structure shows uncertainty without repeating cautious language."
+        )
+    if "first-person plural" in lowered or "shared interpretive" in lowered:
+        return (
+            f"The revision uses a shared frame only where the problem genuinely belongs to writer and reader together. "
+            f"We are not simply choosing a side in {topic}; we are deciding what kind of evidence should count as persuasive. "
+            f"That collective wording names the interpretive problem without becoming casual."
+        )
+    if "soft concession" in lowered or "disagreeing" in lowered:
+        return (
+            f"The paragraph first grants why the opposing view of {topic} can seem reasonable. "
+            f"That concession makes the disagreement sharper, because the revision then shows exactly where the evidence no longer supports the rival claim. "
+            f"The argument becomes firmer by refusing to caricature what it rejects."
+        )
     if "repetition" in lowered or "fresh move" in lowered:
         return (
             f"The draft now shifts from naming the debate in {topic} to asking what the debate changes for the reader. "
@@ -1476,7 +1512,7 @@ def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dic
             "reason_id": "OFFLINE_PROFILE_MATCH",
             "reason": f"Recover hidden profile preference: {target_item}",
             "explanation": f"The simulator interrupted because the draft missed: {missed_item}",
-            "replacement_text": f"Revise the passage so it follows this stable writing preference: {target_item}",
+            "replacement_text": _offline_style_aligned_passage("the essay topic", 1, target_item),
             "option_kind": "reason",
             "category": "profile",
         },
@@ -1485,7 +1521,11 @@ def _offline_replacement_options(target_item: str, missed_item: str) -> List[Dic
             "reason_id": "OFFLINE_LOCAL_FIX",
             "reason": "Make a local passage-level fix.",
             "explanation": "This option repairs the current passage but is less useful for long-term profile recovery.",
-            "replacement_text": "Revise the passage with a clearer local claim.",
+            "replacement_text": (
+                "The revised passage states a clearer claim before adding context. "
+                "It identifies what is at stake, explains why the evidence matters, and keeps the paragraph focused on one analytical move. "
+                "That local repair makes the draft easier to continue."
+            ),
             "option_kind": "reason",
             "category": "local",
         },
@@ -1496,73 +1536,50 @@ def _offline_writing_fill_options(
     target_item: str,
     scenario: FakeUserScenario,
     rng: random.Random,
+    step_index: int,
 ) -> List[Dict[str, Any]]:
-    options = [
-        {
-            "option_id": str(uuid.uuid4()),
-            "reason_id": "STYLE_SPECIFICITY",
-            "reason": "Make the passage more specific and less generic.",
-            "explanation": "Tightens vague wording and makes the claim easier to evaluate.",
-            "replacement_text": "Revise the passage with more specific wording and a clearer claim.",
-            "option_kind": "reason",
-            "category": "writing_fill",
-            "preference_summary": "Use more specific wording instead of broad or generic phrasing.",
-        },
-        {
-            "option_id": str(uuid.uuid4()),
-            "reason_id": "STRUCTURE_TRANSITION",
-            "reason": "Improve the argumentative transition.",
-            "explanation": "Connects the passage more clearly to the prior idea and the essay task.",
-            "replacement_text": "Revise the passage so each sentence connects more explicitly to the prior idea and task.",
-            "option_kind": "reason",
-            "category": "writing_fill",
-            "preference_summary": "Make each sentence connect more explicitly to the prior idea and task.",
-        },
-        {
-            "option_id": str(uuid.uuid4()),
-            "reason_id": "STYLE_MECHANISM",
-            "reason": "Explain the mechanism behind the claim.",
-            "explanation": "Adds causal or institutional reasoning instead of only naming the issue.",
-            "replacement_text": "Revise the passage so it explains the mechanism or reasoning behind the claim.",
-            "option_kind": "reason",
-            "category": "writing_fill",
-            "preference_summary": "Explain the mechanism or reasoning behind important claims.",
-        },
-        {
-            "option_id": str(uuid.uuid4()),
-            "reason_id": "STYLE_CONCISE",
-            "reason": "Make the prose clearer and more concise.",
-            "explanation": "Reduces padding while keeping the passage analytical.",
-            "replacement_text": "Revise the passage with clearer, lighter, and more concise sentences.",
-            "option_kind": "reason",
-            "category": "writing_fill",
-            "preference_summary": "Prefer clearer, lighter, and more concise sentences.",
-        },
-        {
-            "option_id": str(uuid.uuid4()),
-            "reason_id": "STRUCTURE_CLAIM",
-            "reason": "Open with a debatable claim.",
-            "explanation": "Replaces a broad topic opening with a claim the paragraph can develop.",
-            "replacement_text": "Revise the passage so the paragraph opens with a debatable claim rather than a broad topic sentence.",
-            "option_kind": "reason",
-            "category": "writing_fill",
-            "preference_summary": "Open paragraphs with a debatable claim rather than a broad topic sentence.",
-        },
+    topic = _topic_label(scenario.task)
+    option_specs = [
+        ("STYLE_SPECIFICITY", "Make the passage more specific and less generic.", "Tightens vague wording and makes the claim easier to evaluate.", "Use more specific wording instead of broad or generic phrasing."),
+        ("STRUCTURE_TRANSITION", "Improve the argumentative transition.", "Connects the passage more clearly to the prior idea and the essay task.", "Make each sentence connect more explicitly to the prior idea and task."),
+        ("STYLE_MECHANISM", "Explain the mechanism behind the claim.", "Adds causal or institutional reasoning instead of only naming the issue.", "Explain the mechanism or reasoning behind important claims."),
+        ("STYLE_CONCISE", "Make the prose clearer and more concise.", "Reduces padding while keeping the passage analytical.", "Prefer clearer, lighter, and more concise sentences."),
+        ("STRUCTURE_CLAIM", "Open with a debatable claim.", "Replaces a broad topic opening with a claim the paragraph can develop.", "Open paragraphs with a debatable claim rather than a broad topic sentence."),
+        ("CONTENT_COUNTER", "Give the opposing view more force.", "Makes the counterargument concrete enough to test the main claim.", "Make counterarguments concrete enough that they feel like real objections."),
+        ("CONTENT_EXAMPLE", "Ground the claim in a concrete example.", "Adds a case or tradeoff so the abstract point has pressure.", "Support abstract points with concrete examples when needed."),
+        ("STRUCTURE_SYNTHESIS", "Synthesize instead of listing.", "Turns adjacent observations into one governing idea.", "Favor conceptual synthesis over listing disconnected claims."),
+        ("VOICE_RESTRAINED", "Keep the tone restrained and analytical.", "Avoids dramatic emphasis while preserving confidence.", "Write with restrained confidence rather than dramatic emphasis."),
+        ("STYLE_RHYTHM", "Vary the sentence rhythm.", "Uses a short claim, longer explanation, and concise implication.", "Keep sentence rhythm varied: short claim, longer explanation, concise implication."),
     ]
+    options = []
+    for reason_id, reason, explanation, preference_summary in option_specs:
+        options.append(
+            {
+                "option_id": str(uuid.uuid4()),
+                "reason_id": reason_id,
+                "reason": reason,
+                "explanation": explanation,
+                "replacement_text": _offline_style_aligned_passage(topic, step_index, preference_summary),
+                "option_kind": "reason",
+                "category": "writing_fill",
+                "preference_summary": preference_summary,
+            }
+        )
     if rng.random() < 0.75:
         options.insert(
-            rng.randrange(0, len(options) + 1),
+            rng.randrange(0, len(options)),
             {
                 "option_id": str(uuid.uuid4()),
                 "reason_id": "MATCHED_LATENT_STYLE",
                 "reason": f"Match the user's latent style preference: {target_item}",
                 "explanation": "This option most directly fits the simulated user's hidden writing preference.",
-                "replacement_text": f"Revise the passage so it follows this writing preference: {target_item}",
+                "replacement_text": _offline_style_aligned_passage(topic, step_index, target_item),
                 "option_kind": "reason",
                 "category": "writing_fill",
                 "preference_summary": target_item,
             },
         )
+        options = options[:10]
     options.append(
         {
             "option_id": str(uuid.uuid4()),
@@ -1733,7 +1750,7 @@ def run_offline_fake_profile_recovery(
                 )
                 continue
 
-            replacement_options = _offline_writing_fill_options(target_item, scenario, rng)
+            replacement_options = _offline_writing_fill_options(target_item, scenario, rng, step_index)
             selected_payload = _offline_choose_writing_fill(target_item, replacement_options)
             selected_option = selected_payload["selected_option"]
             selected_action = selected_payload["selected_action"]
@@ -1773,7 +1790,8 @@ def run_offline_fake_profile_recovery(
                         selected_action=selected_action,
                         selected_reason_id=selected_option["reason_id"],
                         selected_reason=selected_option["reason"],
-                        selected_revision=selected_option.get("replacement_text", "") or manual_input,
+                        selected_revision=selected_option.get("replacement_text", "")
+                        or _offline_style_aligned_passage(_topic_label(scenario.task), step_index, inferred_summary),
                         manual_input=manual_input,
                         helper_profile_after_step=list(helper_profile),
                         helper_local_memory_after_step=list(helper_local_memory),
