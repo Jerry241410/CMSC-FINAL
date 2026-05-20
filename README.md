@@ -214,7 +214,15 @@ Full hidden profile being simulated:
 - Explain the mechanism or reasoning behind important claims.
 - Keep sentence rhythm varied: short claim, longer explanation, concise implication.
 
-The trace below shows the full 30-step process from `docs/poster_simulation.json`. Steps 16, 17, 22, 26, and 28 did not trigger interruption because the simulated user judged the passage acceptable. Other steps created local evidence, and steps 21, 23, 24, 25, 29, and 30 promoted repeated observations into the recovered profile.
+The highlighted sample below shows the current reporting format from the full 50-step run. The text before the stop remains normal, the replacement after interruption is marked with `<mark>...</mark>` so it appears yellow in Markdown/HTML viewers, and the `Repair or simulator decision` column reports the interpreter's interpretation.
+
+| Group | Step | Sample text with highlighted replacement | Repair or simulator decision | Exact stopping time |
+| --- | ---: | --- | --- | ---: |
+| Common | `1` | Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Revise the passage so it follows this writing preference: Avoid generic academic filler.</mark> | The selected feedback indicates this reusable writing preference: Avoid generic academic filler. | `104.46s` |
+| Rare personal | `1` | Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Revise the passage so it follows this writing preference: Allow a warmer tone when describing vulnerable people affected by the issue.</mark> | The selected feedback indicates this reusable writing preference: Allow a warmer tone when describing vulnerable people affected by the issue. | `71.35s` |
+| Mixed | `1` | Human-computer interaction includes an important debate about usability. Many scholars have different views, and the issue has broad implications for theory and practice. The paragraph names the controversy but does not yet explain the mechanism, evidence, or counterargument. <mark>Prefer sentences that move from concrete scene to abstract claim.</mark> | The selected feedback indicates this reusable writing preference: Prefer sentences that move from concrete scene to abstract claim. | `58.39s` |
+
+The historical trace below shows the full 30-step process from `docs/poster_simulation.json`. Steps 16, 17, 22, 26, and 28 did not trigger interruption because the simulated user judged the passage acceptable. Other steps created local evidence, and steps 21, 23, 24, 25, 29, and 30 promoted repeated observations into the recovered profile.
 
 | Step | Interrupted | Generated bioethics passage | Repair or simulator decision | Memory state | Recall |
 | ---: | :---: | --- | --- | --- | ---: |
