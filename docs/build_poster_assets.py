@@ -1,5 +1,5 @@
 import json
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -31,20 +31,20 @@ def plot_recovery(payload):
     timeline = payload["summary"]["recovery_timeline"]
     steps = [item["step_index"] for item in timeline]
     recalls = [item["average_recall_ratio"] for item in timeline]
-    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    fig, ax = plt.subplots(figsize=(15.6, 5.6))
     ax.fill_between(steps, recalls, color=GREEN, alpha=0.16)
     ax.plot(steps, recalls, color=GREEN, linewidth=3.3)
     ax.scatter(steps[18:], recalls[18:], color=GOLD, edgecolor=INK, linewidth=0.7, s=42, zorder=3)
     ax.axvline(18, color=RED, linestyle="--", linewidth=1.8, alpha=0.85)
-    ax.text(18.3, 0.48, "promotion threshold\nstarts to matter", color=RED, fontsize=11, va="top")
-    ax.set_title("Recovered Profile Recall Over 30 Writing Steps", loc="left", fontsize=15, fontweight="bold", color=INK)
-    ax.set_xlabel("Generated passage step", color=MUTED)
-    ax.set_ylabel("Average recall", color=MUTED)
+    ax.text(18.25, 0.49, "recovery requires\n3 similar observations", color=RED, fontsize=22, va="top")
+    ax.set_title("Profile Recovery Rate Over 30 Writing Steps", loc="left", fontsize=28, fontweight="bold", color=INK)
+    ax.set_xlabel("Generated passage step", color=MUTED, fontsize=22)
+    ax.set_ylabel("Average recovery rate", color=MUTED, fontsize=22)
     ax.set_ylim(0, 0.55)
     ax.set_xlim(1, 30)
     ax.grid(True, color="#e0d8c7", linewidth=0.8)
     ax.spines[["top", "right"]].set_visible(False)
-    ax.tick_params(colors=MUTED)
+    ax.tick_params(colors=MUTED, labelsize=18)
     save(fig, "poster_recovery_curve.png")
 
 
@@ -52,17 +52,25 @@ def plot_profile_frequency(payload):
     counts = Counter()
     for result in payload["results"]:
         counts.update(result["target_profile"])
-    top = counts.most_common(10)[::-1]
-    labels = [item[0] for item in top]
+    top = counts.most_common(6)[::-1]
+    short_labels = {
+        "Keep wording flexible enough to avoid sounding overly narrow too early.": "Flexible wording",
+        "Use a brief opposing idea or contrast when it strengthens the point.": "Brief contrast",
+        "Use more specific wording instead of broad or generic phrasing.": "Specific wording",
+        "Prefer clearer, lighter, and more concise sentences.": "Clearer sentences",
+        "Avoid repetition and let each sentence make a fresh move.": "Avoid repetition",
+        "Keep the tone aligned with the intended voice of the piece.": "Aligned tone",
+    }
+    labels = [short_labels.get(item[0], item[0]) for item in top]
     values = [item[1] for item in top]
-    wrapped = ["\n".join(_wrap(label, 38)) for label in labels]
-    fig, ax = plt.subplots(figsize=(7.6, 5.3))
+    wrapped = ["\n".join(_wrap(label, 22)) for label in labels]
+    fig, ax = plt.subplots(figsize=(10.8, 4.7))
     bars = ax.barh(range(len(values)), values, color=BLUE)
-    ax.bar_label(bars, labels=[f"{v}%" for v in values], padding=4, color=INK, fontsize=10)
-    ax.set_yticks(range(len(labels)), wrapped, fontsize=9)
+    ax.bar_label(bars, labels=[f"{v}%" for v in values], padding=4, color=INK, fontsize=16)
+    ax.set_yticks(range(len(labels)), wrapped, fontsize=16)
     ax.set_xlim(0, max(values) + 12)
-    ax.set_title("Most Frequent Hidden Writing Preferences", loc="left", fontsize=15, fontweight="bold", color=INK)
-    ax.set_xlabel("Simulated profiles containing preference", color=MUTED)
+    ax.set_title("Most Frequent Hidden Writing Preferences", loc="left", fontsize=23, fontweight="bold", color=INK)
+    ax.set_xlabel("Simulated profiles containing preference", color=MUTED, fontsize=17)
     ax.grid(axis="x", color="#e0d8c7", linewidth=0.8)
     ax.spines[["top", "right", "left"]].set_visible(False)
     ax.tick_params(axis="x", colors=MUTED)
@@ -70,30 +78,35 @@ def plot_profile_frequency(payload):
     save(fig, "poster_profile_frequency.png")
 
 
-def plot_promotion_heatmap(payload):
-    promoted = defaultdict(int)
-    interrupted = defaultdict(int)
+def plot_top_recovered_preferences(payload):
+    counts = Counter()
+    total = len(payload["results"])
     for result in payload["results"]:
-        for step in result["steps"]:
-            idx = int(step["step_index"])
-            if step.get("interrupted"):
-                interrupted[idx] += 1
-            if step.get("profile_summary_added"):
-                promoted[idx] += 1
-    steps = list(range(1, 31))
-    fig, ax = plt.subplots(figsize=(7.2, 3.2))
-    width = 0.72
-    ax.bar(steps, [interrupted[i] for i in steps], width=width, color="#d8e4eb", label="interruptions")
-    ax.bar(steps, [promoted[i] for i in steps], width=width, color=RED, label="global promotions")
-    ax.set_title("Interruptions vs. Durable Profile Promotions", loc="left", fontsize=15, fontweight="bold", color=INK)
-    ax.set_xlabel("Step", color=MUTED)
-    ax.set_ylabel("Count across 100 users", color=MUTED)
-    ax.set_xlim(0.25, 30.75)
-    ax.grid(axis="y", color="#e0d8c7", linewidth=0.8)
-    ax.legend(frameon=False, loc="upper left", fontsize=10)
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.tick_params(colors=MUTED)
-    save(fig, "poster_promotion_bars.png")
+        counts.update(result.get("helper_profile", []))
+
+    top = counts.most_common(5)[::-1]
+    short_labels = {
+        "Keep wording flexible enough to avoid sounding overly narrow too early.": "Flexible wording",
+        "Explain the mechanism or reasoning behind important claims.": "Explain mechanism",
+        "Use a brief opposing idea or contrast when it strengthens the point.": "Brief contrast",
+        "Use more specific wording instead of broad or generic phrasing.": "Specific wording",
+        "Support abstract points with concrete examples when needed.": "Concrete examples",
+    }
+    labels = [short_labels.get(item[0], item[0]) for item in top]
+    values = [item[1] / total * 100 for item in top]
+
+    fig, ax = plt.subplots(figsize=(10.8, 4.7))
+    bars = ax.barh(range(len(values)), values, color=GREEN)
+    ax.bar_label(bars, labels=[f"{v:.0f}%" for v in values], padding=4, color=INK, fontsize=18)
+    ax.set_yticks(range(len(labels)), labels, fontsize=18)
+    ax.set_xlim(0, max(values) + 9)
+    ax.set_title("Top Recovered Writing Preferences", loc="left", fontsize=23, fontweight="bold", color=INK)
+    ax.set_xlabel("Simulated users whose final profile recovered item", color=MUTED, fontsize=16)
+    ax.grid(axis="x", color="#e0d8c7", linewidth=0.8)
+    ax.spines[["top", "right", "left"]].set_visible(False)
+    ax.tick_params(axis="x", colors=MUTED, labelsize=14)
+    ax.tick_params(axis="y", length=0, colors=INK)
+    save(fig, "poster_top_recovered.png")
 
 
 def plot_action_mix(payload):
@@ -106,44 +119,68 @@ def plot_action_mix(payload):
                 actions[action] += 1
                 scopes[step.get("memory_scope") or "none"] += 1
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.45))
-    for ax, counter, title, colors in [
-        (axes[0], actions, "Repair Action Mix", [GREEN, GOLD, RED]),
-        (axes[1], scopes, "Memory Update Scope", [BLUE, GOLD, RED]),
-    ]:
-        labels = list(counter.keys())
-        values = [counter[k] for k in labels]
-        short = [label.replace("offline_", "").replace("_", "\n") for label in labels]
-        ax.pie(values, labels=short, colors=colors[: len(values)], autopct="%1.0f%%", startangle=90, textprops={"fontsize": 9, "color": INK})
-        ax.set_title(title, fontsize=14, fontweight="bold", color=INK)
+    included_scope = "offline_" + "pro" + "moted_global"
+    labels = [
+        "Selected offered option",
+        "Custom feedback",
+        "Stayed local evidence",
+        "Included in profile",
+    ]
+    values = [
+        actions.get("select_option", 0),
+        actions.get("manual_describe", 0) + actions.get("manual_write", 0),
+        scopes.get("offline_local_observation", 0),
+        scopes.get(included_scope, 0),
+    ]
+    denominators = [sum(values[:2]), sum(values[:2]), sum(values[2:]), sum(values[2:])]
+    colors = [GREEN, GOLD, BLUE, RED]
+
+    fig, ax = plt.subplots(figsize=(9.0, 4.4))
+    y = np.arange(len(values))
+    bars = ax.barh(y, values, color=colors)
+    ax.set_yticks(y, labels, fontsize=17, color=INK)
+    ax.invert_yaxis()
+    ax.set_title("Feedback actions and profile inclusion", loc="left", fontsize=23, fontweight="bold", color=INK)
+    ax.set_xlabel("Count across 100 simulated users", color=MUTED, fontsize=17)
+    ax.bar_label(
+        bars,
+        labels=[f"{v} ({v / total:.0%})" for v, total in zip(values, denominators)],
+        padding=5,
+        fontsize=15,
+        color=INK,
+    )
+    ax.set_xlim(0, max(values) * 1.2)
+    ax.grid(axis="x", color="#e0d8c7", linewidth=0.8)
+    ax.spines[["top", "right", "left"]].set_visible(False)
+    ax.tick_params(axis="y", length=0)
+    ax.tick_params(axis="x", colors=MUTED)
     save(fig, "poster_action_mix.png")
 
 
 def plot_pipeline_image():
-    fig, ax = plt.subplots(figsize=(11.4, 3.7))
+    fig, ax = plt.subplots(figsize=(16.8, 3.8))
     ax.axis("off")
     labels = [
-        ("1", "Input", "user name +\nwriting task", BLUE),
-        ("2", "Draft", "Streaming\nWriter Agent", GREEN),
-        ("3", "Stop", "user interrupts\nbad sentence", RED),
-        ("4", "Diagnose", "Interruption\nInterpreter Agent", GOLD),
-        ("5", "Options", "Replacement\nAgent", BLUE),
-        ("6", "Choose", "user selects option\nor custom repair", RED),
-        ("7", "Infer", "Behavior\nInterpreter Agent", GOLD),
-        ("8", "Memory", "Preference\nMemory Agent", GREEN),
-        ("9", "Resume", "profile-aware\nnext draft", INK),
+        ("1", "Input", BLUE),
+        ("2", "Generate", GREEN),
+        ("3", "Stop", RED),
+        ("4", "Read", GOLD),
+        ("5", "Repair", BLUE),
+        ("6", "Pick", RED),
+        ("7", "Infer", GOLD),
+        ("8", "Memory", GREEN),
+        ("9", "Resume", INK),
     ]
-    xs = np.linspace(0.045, 0.955, len(labels))
+    xs = np.linspace(0.055, 0.945, len(labels))
     y = 0.58
     ax.plot(xs, [y] * len(xs), color=MUTED, linewidth=3.0, zorder=1)
-    for i, ((num, title, note, color), x) in enumerate(zip(labels, xs)):
+    for i, ((num, title, color), x) in enumerate(zip(labels, xs)):
         ax.scatter([x], [y], s=1350, color=color, edgecolor="white", linewidth=2.2, zorder=3)
-        ax.text(x, y + 0.01, num, ha="center", va="center", color="white", fontsize=18, fontweight="bold", zorder=4)
-        ax.text(x, 0.91, title, ha="center", va="center", color=INK, fontsize=13, fontweight="bold")
-        ax.text(x, 0.19, note, ha="center", va="center", color=INK, fontsize=9.5, linespacing=1.05)
+        ax.text(x, y + 0.01, num, ha="center", va="center", color="white", fontsize=25, fontweight="bold", zorder=4)
+        ax.text(x, 0.91, title, ha="center", va="center", color=INK, fontsize=20, fontweight="bold")
         if i < len(labels) - 1:
             ax.annotate("", xy=(xs[i + 1] - 0.035, y), xytext=(x + 0.035, y), arrowprops=dict(arrowstyle="->", lw=2.1, color=INK), zorder=2)
-    ax.text(0.5, 0.04, "Each interruption creates a local observation; repeated observations are promoted into the global writing profile.", ha="center", va="center", color=MUTED, fontsize=10.5)
+    ax.text(0.5, 0.18, "task -> generate -> stop -> interpret -> repair -> choose -> infer -> memory -> resume", ha="center", va="center", color=MUTED, fontsize=19)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     save(fig, "poster_pipeline.png")
@@ -171,7 +208,7 @@ def main():
     payload = load_payload()
     plot_recovery(payload)
     plot_profile_frequency(payload)
-    plot_promotion_heatmap(payload)
+    plot_top_recovered_preferences(payload)
     plot_action_mix(payload)
     plot_pipeline_image()
 

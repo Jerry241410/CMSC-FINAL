@@ -42,6 +42,8 @@ The app starts a local web UI at:
 http://127.0.0.1:8765
 ```
 
+GitHub repository: https://github.com/Jerry241410/CMSC-FINAL.git
+
 The current interface includes:
 
 - user and task input
@@ -140,7 +142,9 @@ Summary from the offline simulation:
 | Duplicate word count | `24.10` | `23.00` | `9` | `41` |
 | Duplicate word ratio | `0.233` | `0.228` | `0.108` | `0.333` |
 | Recovered profile items | `5.00` | `5.00` | `1` | `9` |
-| Final recall | `0.489` | `0.495` | `0.096` | `0.923` |
+| Final recall | `0.489` | `0.495` | `0.104` | `0.907` |
+
+Across the `100` simulated writers and `30` steps, the run produced `2486` interruptions. The simulator selected a provided option `1974` times and used manual/custom feedback `512` times. Memory updates were local observations `1986` times and global profile promotions `500` times.
 
 Most frequent words across randomly generated profiles: `the` 458, `and` 247, `avoid` 230, `with` 228, `a` 222, `to` 217, `use` 208, `more` 186, `prefer` 178, `keep` 174, `or` 170, `when` 163.
 
@@ -161,6 +165,18 @@ Most common exact profile items:
 | Avoid generic academic filler. | `29%` |
 
 ![Average recovery rate line plot](docs/avg_recovery_rate_line_plot.svg)
+
+Current full 50-step evaluation:
+
+The updated evaluation now tests `50` writing steps instead of `30`. It keeps the original actual writing-case simulation, but compares three profile groups: `common`, `rare`, and `mix`. Each group contains `50` simulated profiles instead of the older `100` single-group setup, and each hidden profile still contains `9` to `12` preferences. The rare personal group samples from `20` less common elements such as comma-separated sentence rhythm, emotionally touched wording, metaphor use, warmer treatment of vulnerable people, punctuation-driven rhythm, compact metaphor, and concrete-scene-to-abstract-claim movement. The mixed group selects exactly `3` rare elements plus `6` to `9` common profile elements.
+
+| Group | Profiles | Steps each | Final average recall | Interruptions | Manual/custom actions |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Common profile group | `50` | `50` | `0.857` | `1477` | `297` |
+| Rare personal group | `50` | `50` | `0.815` | `1465` | `364` |
+| Mixed group | `50` | `50` | `0.879` | `1472` | `355` |
+
+Across all `150` simulated profiles, final average recall was `0.851` after `50` steps, with `4414` interruptions and `1016` manual/custom actions. This was the full offline evaluation run, not the smoke test. The exported report is in `simulation_outputs/profile_group_50x50_offline/simulation_report.md`; it includes exact stopping times and sample traces where the text before the stop is normal text and the replacement is marked with `<mark>...</mark>` for yellow highlighting in Markdown/HTML viewers. In those samples, the `Repair or simulator decision` field uses the interpreter's interpretation rather than only the simulator's selected replacement text.
 
 One representative hidden profile included preferences such as:
 
@@ -280,13 +296,13 @@ python -m writing_helper.web --port 8766
 Run the real AI simulation:
 
 ```bash
-python run_fake_profile_simulation.py --count 100 --max-steps 30
+python run_fake_profile_simulation.py --count 50 --max-steps 50 --profile-group all
 ```
 
-Run the offline sanity simulation:
+Run the full offline evaluation without an API key:
 
 ```bash
-python run_fake_profile_simulation.py --count 100 --max-steps 30 --offline
+python run_fake_profile_simulation.py --count 50 --max-steps 50 --profile-group all --offline
 ```
 
 Export a compact audit:

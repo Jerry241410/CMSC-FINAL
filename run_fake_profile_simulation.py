@@ -13,12 +13,18 @@ from writing_helper.simulation import (
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a headless fake-profile simulation for the writing helper.")
-    parser.add_argument("--count", type=int, default=100, help="Number of fake users to simulate.")
+    parser.add_argument("--count", type=int, default=50, help="Number of fake users to simulate per profile group.")
     parser.add_argument("--seed", type=int, default=7, help="Random seed for fake user generation.")
     parser.add_argument("--model", type=str, default="gpt-4o-mini", help="Model name for helper and judge agents.")
-    parser.add_argument("--max-steps", type=int, default=6, help="Maximum interruption cycles per fake user.")
+    parser.add_argument("--max-steps", type=int, default=50, help="Maximum interruption cycles per fake user.")
     parser.add_argument("--output", type=Path, default=None, help="Path to save the raw simulation JSON.")
     parser.add_argument("--offline", action="store_true", help="Run deterministic offline recovery without OpenAI calls.")
+    parser.add_argument(
+        "--profile-group",
+        choices=["all", "common", "rare", "mix"],
+        default="all",
+        help="Profile cohort to simulate. 'all' runs common, rare, and mix cohorts.",
+    )
     args = parser.parse_args()
 
     if args.offline:
@@ -28,6 +34,7 @@ def main() -> None:
             seed=args.seed,
             max_steps=args.max_steps,
             output_path=output_path,
+            profile_group=args.profile_group,
         )
         print(json.dumps({"output_path": str(output_path), "summary": payload["summary"]}, ensure_ascii=False, indent=2))
         return
@@ -43,6 +50,7 @@ def main() -> None:
             model=args.model,
             max_steps=args.max_steps,
             output_path=output_path,
+            profile_group=args.profile_group,
         )
     )
     print(json.dumps({"output_path": str(output_path), "summary": payload["summary"]}, ensure_ascii=False, indent=2))

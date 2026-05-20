@@ -82,6 +82,34 @@ VOICE_PREFERENCE_POOL = [
     "Make evaluative language traceable to evidence in the paragraph.",
 ]
 
+RARE_PREFERENCE_POOL = [
+    "Prefer sentences whose main clauses are separated by commas when the thought has two balanced parts.",
+    "Use emotionally touched wording only when it clarifies a human stake in the argument.",
+    "Use metaphor sparingly to make an abstract mechanism easier to picture.",
+    "Let one sentence contain a deliberate pause before the strongest claim.",
+    "Prefer a slightly intimate reflective turn after a technical explanation.",
+    "Use a quiet image or sensory detail when the paragraph risks becoming too abstract.",
+    "Avoid perfectly symmetrical sentence patterns when they make the prose feel rehearsed.",
+    "Use a parenthetical aside only when it adds judgment rather than extra information.",
+    "Let occasional sentence fragments mark emphasis after a dense analytical sentence.",
+    "Prefer a final clause that sounds unresolved when the evidence is genuinely unsettled.",
+    "Use first-person plural only when it names a shared interpretive problem.",
+    "Avoid decorative metaphors unless they carry analytical work.",
+    "Use a soft concession before disagreeing with a position.",
+    "Prefer emotionally restrained verbs over dramatic adjectives for human consequences.",
+    "Let punctuation create rhythm, especially commas, semicolons, and short dashes.",
+    "Use a compact metaphor when explaining scale, pressure, distance, or friction.",
+    "Prefer sentences that move from concrete scene to abstract claim.",
+    "Allow a warmer tone when describing vulnerable people affected by the issue.",
+    "Use contrast inside the sentence rather than only between sentences.",
+    "Let the wording show uncertainty through structure rather than repeated qualifiers.",
+]
+
+COMMON_PROFILE_GROUP = "common"
+RARE_PROFILE_GROUP = "rare"
+MIX_PROFILE_GROUP = "mix"
+PROFILE_GROUPS = {COMMON_PROFILE_GROUP, RARE_PROFILE_GROUP, MIX_PROFILE_GROUP}
+
 ACADEMIC_DOMAINS = [
     "machine learning",
     "climate policy",
@@ -108,6 +136,7 @@ class FakeUserScenario:
     user_id: str
     target_profile: List[str]
     task: str
+    profile_group: str = COMMON_PROFILE_GROUP
 
 
 @dataclass
@@ -292,31 +321,78 @@ Constraints:
         }
 
 
-def generate_fake_user_scenarios(count: int = 100, seed: int = 7) -> List[FakeUserScenario]:
+def _sample_common_profile(rng: random.Random) -> List[str]:
+    standard_count = rng.randint(3, 5)
+    custom_count = rng.randint(2, 3)
+    profile_items = rng.sample(STANDARD_PREFERENCE_POOL, k=standard_count)
+    profile_items.extend(rng.sample(CUSTOM_PREFERENCE_POOL, k=custom_count))
+    profile_items.extend(rng.sample(STRUCTURAL_PREFERENCE_POOL, k=2))
+    profile_items.extend(rng.sample(VOICE_PREFERENCE_POOL, k=2))
+    rng.shuffle(profile_items)
+    return profile_items
+
+
+def _sample_rare_profile(rng: random.Random) -> List[str]:
+    return rng.sample(RARE_PREFERENCE_POOL, k=rng.randint(9, 12))
+
+
+def _sample_mix_profile(rng: random.Random) -> List[str]:
+    profile_items = rng.sample(RARE_PREFERENCE_POOL, k=3)
+    common_pool = list(dict.fromkeys(STANDARD_PREFERENCE_POOL + CUSTOM_PREFERENCE_POOL + STRUCTURAL_PREFERENCE_POOL + VOICE_PREFERENCE_POOL))
+    profile_items.extend(rng.sample(common_pool, k=rng.randint(6, 9)))
+    rng.shuffle(profile_items)
+    return profile_items
+
+
+def _sample_profile_for_group(rng: random.Random, profile_group: str) -> List[str]:
+    if profile_group == RARE_PROFILE_GROUP:
+        return _sample_rare_profile(rng)
+    if profile_group == MIX_PROFILE_GROUP:
+        return _sample_mix_profile(rng)
+    return _sample_common_profile(rng)
+
+
+def generate_fake_user_scenarios(
+    count: int = 50,
+    seed: int = 7,
+    profile_group: str = COMMON_PROFILE_GROUP,
+    user_id_prefix: Optional[str] = None,
+) -> List[FakeUserScenario]:
+    if profile_group not in PROFILE_GROUPS:
+        raise ValueError(f"profile_group must be one of {sorted(PROFILE_GROUPS)}")
     rng = random.Random(seed)
     scenarios: List[FakeUserScenario] = []
+    prefix = user_id_prefix or f"fake_{profile_group}"
     for index in range(count):
         domain = rng.choice(ACADEMIC_DOMAINS)
         task = rng.choice(TASK_TEMPLATES).format(domain=domain)
-        standard_count = rng.randint(3, 5)
-        custom_count = rng.randint(2, 3)
-        profile_items = rng.sample(STANDARD_PREFERENCE_POOL, k=standard_count)
-        profile_items.extend(rng.sample(CUSTOM_PREFERENCE_POOL, k=custom_count))
-        profile_items.extend(rng.sample(STRUCTURAL_PREFERENCE_POOL, k=2))
-        profile_items.extend(rng.sample(VOICE_PREFERENCE_POOL, k=2))
-        rng.shuffle(profile_items)
+        profile_items = _sample_profile_for_group(rng, profile_group)
         scenarios.append(
             FakeUserScenario(
-                user_id=f"fake_user_{index + 1:03d}",
+                user_id=f"{prefix}_{index + 1:03d}",
                 target_profile=profile_items,
                 task=task,
+                profile_group=profile_group,
+            )
+        )
+    return scenarios
+
+
+def generate_profile_group_scenarios(count_per_group: int = 50, seed: int = 7) -> List[FakeUserScenario]:
+    scenarios: List[FakeUserScenario] = []
+    for offset, profile_group in enumerate([COMMON_PROFILE_GROUP, RARE_PROFILE_GROUP, MIX_PROFILE_GROUP]):
+        scenarios.extend(
+            generate_fake_user_scenarios(
+                count=count_per_group,
+                seed=seed + offset * 1009,
+                profile_group=profile_group,
             )
         )
     return scenarios
 
 
 class HeadlessInterruptionSimulator:
-    def __init__(self, model: str = "gpt-4o-mini", max_steps: int = 6):
+    def __init__(self, model: str = "gpt-4o-mini", max_steps: int = 50):
         self.model = model
         self.max_steps = max_steps
 
@@ -336,6 +412,7 @@ class HeadlessInterruptionSimulator:
                 "scenario_count": len(scenarios),
                 "model": self.model,
                 "max_steps": self.max_steps,
+                "profile_groups": sorted(_group_results(results).keys()),
                 "started_at": started_at,
                 "finished_at": time.time(),
             },
@@ -458,6 +535,7 @@ class HeadlessInterruptionSimulator:
             similarity = compute_profile_similarity(scenario.target_profile, state.preference_profile)
             return {
                 "user_id": scenario.user_id,
+                "profile_group": scenario.profile_group,
                 "task": scenario.task,
                 "target_profile": list(scenario.target_profile),
                 "helper_profile": list(state.preference_profile),
@@ -662,7 +740,7 @@ Continue the essay with exactly one academic paragraph of 4 to 6 sentences. Do n
             return list(items)
         return list(dict.fromkeys(list(items) + [cleaned]))
 
-    def _build_summary(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _build_summary(self, results: List[Dict[str, Any]], include_groups: bool = True) -> Dict[str, Any]:
         if not results:
             return {
                 "average_overlap_word_count": 0.0,
@@ -691,7 +769,7 @@ Continue the essay with exactly one academic paragraph of 4 to 6 sentences. Do n
                 if "recall_ratio" in recovery:
                     recovery_by_step.setdefault(int(step.get("step_index", 0)), []).append(float(recovery["recall_ratio"]))
         count = len(results)
-        return {
+        summary = {
             "average_overlap_word_count": overlap_total / count,
             "average_target_word_count": target_total / count,
             "average_recall_ratio": recall_total / count,
@@ -707,6 +785,12 @@ Continue the essay with exactly one academic paragraph of 4 to 6 sentences. Do n
                 for step_index, values in sorted(recovery_by_step.items())
             ],
         }
+        if include_groups:
+            summary["group_summaries"] = {
+                group: self._build_summary(group_results, include_groups=False)
+                for group, group_results in sorted(_group_results(results).items())
+            }
+        return summary
 
 
 def memory_agent_record_observation(existing_observations: List[Any], key: str, summary: str) -> tuple[List[Any], int]:
@@ -751,6 +835,14 @@ def compute_profile_similarity(target_profile: List[str], helper_profile: List[s
     }
 
 
+def _group_results(results: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for item in results:
+        group = str(item.get("profile_group", COMMON_PROFILE_GROUP) or COMMON_PROFILE_GROUP)
+        grouped.setdefault(group, []).append(item)
+    return grouped
+
+
 def _tokenize(text: str) -> List[str]:
     return re.findall(r"[a-zA-Z0-9']+", text.lower())
 
@@ -771,13 +863,18 @@ def default_simulation_output_path() -> Path:
 
 
 async def run_default_fake_profile_simulation(
-    count: int = 100,
+    count: int = 50,
     seed: int = 7,
     model: str = "gpt-4o-mini",
-    max_steps: int = 6,
+    max_steps: int = 50,
     output_path: Optional[Path] = None,
+    profile_group: str = "all",
 ) -> Dict[str, Any]:
-    scenarios = generate_fake_user_scenarios(count=count, seed=seed)
+    scenarios = (
+        generate_profile_group_scenarios(count_per_group=count, seed=seed)
+        if profile_group == "all"
+        else generate_fake_user_scenarios(count=count, seed=seed, profile_group=profile_group)
+    )
     simulator = HeadlessInterruptionSimulator(model=model, max_steps=max_steps)
     path = output_path or default_simulation_output_path()
     return await simulator.run_batch(scenarios=scenarios, output_path=path)
@@ -1560,12 +1657,17 @@ def _truncate(text: str, limit: int) -> str:
 
 
 def run_offline_fake_profile_recovery(
-    count: int = 100,
+    count: int = 50,
     seed: int = 7,
-    max_steps: int = 6,
+    max_steps: int = 50,
     output_path: Optional[Path] = None,
+    profile_group: str = "all",
 ) -> Dict[str, Any]:
-    scenarios = generate_fake_user_scenarios(count=count, seed=seed)
+    scenarios = (
+        generate_profile_group_scenarios(count_per_group=count, seed=seed)
+        if profile_group == "all"
+        else generate_fake_user_scenarios(count=count, seed=seed, profile_group=profile_group)
+    )
     started_at = time.time()
     results = []
     rng = random.Random(seed + 1000)
@@ -1685,6 +1787,7 @@ def run_offline_fake_profile_recovery(
         results.append(
             {
                 "user_id": scenario.user_id,
+                "profile_group": scenario.profile_group,
                 "task": scenario.task,
                 "target_profile": list(scenario.target_profile),
                 "helper_profile": helper_profile,
@@ -1704,6 +1807,9 @@ def run_offline_fake_profile_recovery(
             "scenario_count": len(scenarios),
             "model": "offline-deterministic",
             "max_steps": max_steps,
+            "profile_group": profile_group,
+            "profile_groups": sorted(_group_results(results).keys()),
+            "count_per_group": count,
             "started_at": started_at,
             "finished_at": time.time(),
             "note": "Offline sanity run. It does not call an AI model.",
