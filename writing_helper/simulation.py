@@ -1034,6 +1034,24 @@ def _domain_material(topic: str) -> Dict[str, List[str]]:
                 "individual behavior matters, but it cannot explain structural exposure by itself.",
             ],
         },
+        "bioethics": {
+            "issues": ["patient autonomy", "informed consent", "end-of-life care", "reproductive ethics", "medical AI"],
+            "mechanisms": [
+                "Clinical authority shapes which choices appear reasonable to patients before consent is formally requested.",
+                "Disclosure affects autonomy only when patients can understand risks, alternatives, and consequences in practical terms.",
+                "End-of-life decisions redistribute responsibility among patients, families, clinicians, and institutions.",
+            ],
+            "evidence": [
+                "Hospital ethics cases show that formal choice can coexist with pressure, confusion, and unequal access to advocacy.",
+                "Studies of consent forms and patient comprehension show that information volume does not guarantee understanding.",
+                "Policy variation across jurisdictions shows how safeguards change who can act on a medical decision and under what review.",
+            ],
+            "counterarguments": [
+                "some critics argue that stronger safeguards can also make care slower and less responsive.",
+                "a focus on autonomy can understate dependency, disability, family pressure, and institutional constraint.",
+                "legal permission may protect choice while also changing the professional meaning of medical care.",
+            ],
+        },
         "urban sociology": {
             "issues": ["gentrification", "housing segregation", "public transit", "policing", "neighborhood displacement"],
             "mechanisms": [
@@ -1264,101 +1282,114 @@ def _offline_bioethics_passage(step_index: int, profile_item: str, satisfies_pro
 
 def _offline_style_aligned_passage(topic: str, step_index: int, profile_item: str) -> str:
     lowered = profile_item.lower()
+    material = _domain_material(topic)
+    issue = material["issues"][(step_index - 1) % len(material["issues"])]
+    issue_title = _sentence_start(issue)
+    mechanism = material["mechanisms"][(step_index - 1) % len(material["mechanisms"])]
+    evidence = material["evidence"][(step_index - 1) % len(material["evidence"])]
+    counter = material["counterarguments"][(step_index - 1) % len(material["counterarguments"])]
     if "comma" in lowered or "punctuation" in lowered or "semicolon" in lowered or "balanced parts" in lowered:
         return (
-            f"The stronger version treats {topic} as a pressure point, not just a topic, because the evidence changes what the writer can responsibly claim. "
-            f"Its rhythm holds two ideas together, the practical stake and the analytical limit, so the sentence feels deliberate rather than merely long. "
-            f"That punctuation gives the paragraph a controlled pause before the conclusion."
+            f"{issue_title} creates a practical pressure, because {mechanism[0].lower() + mechanism[1:]} "
+            f"The evidence points in one direction, the counterpressure in another, so the claim has to hold both parts together. "
+            f"That tension makes the conclusion narrower, but more defensible."
         )
     if "emotion" in lowered or "warmer" in lowered or "vulnerable" in lowered or "human stake" in lowered:
         return (
-            f"The revision keeps the analysis of {topic} grounded in people who must live with its consequences. "
-            f"It names harm without turning suffering into decoration, and it lets the human stake clarify why the argument matters. "
-            f"The tone becomes warmer while still remaining evidence-minded."
+            f"{issue_title} matters because the people affected by it do not experience policy as an abstraction. "
+            f"{evidence} "
+            f"The ethical weight of the issue comes from that lived exposure, not from a dramatic claim about harm."
         )
     if "metaphor" in lowered or "image" in lowered or "sensory" in lowered or "scene" in lowered:
         return (
-            f"The paragraph begins with a concrete scene: a reader facing evidence that points in several directions at once. "
-            f"From there, {topic} becomes less like a list of positions and more like a lens that brings some pressures into focus while leaving others blurred. "
-            f"The image helps the abstract claim become easier to follow."
+            f"{issue_title} works like a narrow lens: it makes some consequences of {topic} visible while pushing others to the edge of the frame. "
+            f"{mechanism} "
+            f"The image matters because the debate is not only about what can be seen, but also about what the chosen frame leaves out."
         )
     if "uncertainty through structure" in lowered or "unresolved" in lowered:
         return (
-            f"The passage does not pretend that {topic} settles into a clean conclusion. "
-            f"It builds toward the strongest claim, then leaves a visible qualification in the final clause, where the evidence remains incomplete. "
-            f"That structure shows uncertainty without repeating cautious language."
+            f"{issue_title} supports a limited claim rather than a settled conclusion. "
+            f"{evidence} "
+            f"Still, {counter.lower()}, which leaves the argument persuasive only within the conditions the evidence can actually cover."
         )
     if "first-person plural" in lowered or "shared interpretive" in lowered:
         return (
-            f"The revision uses a shared frame only where the problem genuinely belongs to writer and reader together. "
-            f"We are not simply choosing a side in {topic}; we are deciding what kind of evidence should count as persuasive. "
-            f"That collective wording names the interpretive problem without becoming casual."
+            f"We cannot evaluate {issue} by asking only whether {topic} sounds beneficial in principle. "
+            f"{mechanism} "
+            f"The harder question is what evidence we should trust when institutional incentives and human consequences point in different directions."
         )
     if "soft concession" in lowered or "disagreeing" in lowered:
         return (
-            f"The paragraph first grants why the opposing view of {topic} can seem reasonable. "
-            f"That concession makes the disagreement sharper, because the revision then shows exactly where the evidence no longer supports the rival claim. "
-            f"The argument becomes firmer by refusing to caricature what it rejects."
+            f"The strongest defense of the opposing view is that {counter.lower()} "
+            f"That concern deserves weight, but it does not settle the question of {issue}. "
+            f"{evidence} "
         )
     if "repetition" in lowered or "fresh move" in lowered:
         return (
-            f"The draft now shifts from naming the debate in {topic} to asking what the debate changes for the reader. "
-            f"Evidence, method, and interpretation pull in different directions, so the paragraph makes a new argumentative move. "
-            f"That turn prevents the essay from circling the same claim in different words."
+            f"{issue_title} changes the stakes of {topic} by moving the debate from general concern to institutional consequence. "
+            f"{mechanism} "
+            f"That shift gives the argument a new task: to explain who gains authority, who bears risk, and what evidence can justify the tradeoff."
         )
     if "specific" in lowered or "precise" in lowered or "vague" in lowered:
         return (
-            f"The revision replaces broad language with sharper terms: evidence becomes traceable data, caution becomes uncertainty about scope, and impact becomes a limit on what the argument can prove. "
-            f"Those concrete words make the claim easier to test. "
-            f"The prose therefore sounds less inflated and more accountable."
+            f"{issue_title} should be judged through concrete evidence rather than broad claims about impact. "
+            f"{evidence} "
+            f"That detail makes the claim testable because it names the mechanism, the affected setting, and the limit on what can be concluded."
         )
     if "tone" in lowered or "measured" in lowered or "restrained" in lowered or "qualification" in lowered:
         return (
-            f"The paragraph advances the claim with restraint. "
-            f"It suggests that the evidence points in a useful direction, while leaving room for limits in method and context. "
-            f"The result is confident without becoming overstated."
+            f"{issue_title} gives the argument a plausible direction, but the evidence does not support an absolute claim. "
+            f"{evidence} "
+            f"The safer conclusion is that {topic} can clarify the problem while still leaving room for context, method, and counterexample."
         )
     if "example" in lowered or "concrete" in lowered or "tradeoff" in lowered:
         return (
-            f"The paragraph anchors the abstract claim in a concrete case. "
-            f"A rule may improve consistency while also narrowing judgment in borderline situations. "
-            f"That tradeoff makes the argument visible rather than merely decorative."
+            f"{issue_title} shows the tradeoff in concrete terms. "
+            f"{mechanism} "
+            f"The same arrangement can improve consistency while narrowing judgment in borderline cases, so the example carries the argument rather than merely illustrating it."
         )
     if "mechanism" in lowered or "causal" in lowered or "reasoning" in lowered:
         return (
-            f"The paragraph explains the mechanism behind the claim. "
-            f"The reader can see how a change in incentives alters interpretation, then how that altered interpretation changes the evidence a writer can use. "
-            f"The paragraph therefore gives a reason, not just a conclusion."
+            f"{issue_title} matters because the causal path is institutional. "
+            f"{mechanism} "
+            f"Once that mechanism is visible, the claim no longer rests on importance alone; it explains how one change produces another."
         )
     if "transition" in lowered or "connect" in lowered or "logical relation" in lowered:
         return (
-            f"The next passage begins by naming its relation to the prior point. "
-            f"Because the earlier claim depends on evidence, this paragraph turns to the structure that makes evidence persuasive. "
-            f"The transition carries the argument forward instead of simply adding another topic."
+            f"That earlier concern leads directly to {issue}, where the evidence has to do more than name a problem. "
+            f"{mechanism} "
+            f"The connection matters because the argument moves from what is disputed to why the dispute persists."
         )
     if "counter" in lowered or "opposing" in lowered or "objections" in lowered:
         return (
-            f"The paragraph gives the opposing view enough force to matter. "
-            f"A skeptical reader might accept the evidence but reject the inference drawn from it. "
-            f"By answering that pressure directly, the paragraph makes the main claim more credible."
+            f"A skeptical reader could accept the evidence about {issue} and still resist the conclusion. "
+            f"{counter} "
+            f"The response is not to dismiss that objection, but to show why {evidence[0].lower() + evidence[1:]} changes the balance of the claim."
         )
     if "paragraph" in lowered or "structure" in lowered or "topic sentence" in lowered or "one governing idea" in lowered:
         return (
-            f"The paragraph opens with a debatable claim rather than a topic label. "
-            f"Each following sentence tests or qualifies that claim instead of wandering into a list. "
-            f"The paragraph closes by sharpening the implication for the larger essay."
+            f"{issue_title} is not merely another topic in {topic}; it is a test of how the field justifies authority. "
+            f"{mechanism} "
+            f"{evidence} "
         )
     if "concise" in lowered or "compact" in lowered or "rhythm" in lowered:
         return (
-            f"The paragraph uses a compact rhythm. "
-            f"A short claim sets the direction; a longer sentence explains the pressure behind it. "
-            f"The final sentence lands cleanly."
+            f"{issue_title} exposes the tradeoff. "
+            f"{mechanism} "
+            f"The implication is narrow but sharp: evidence matters only when it explains who carries the risk."
         )
     return (
-        f"The passage keeps the prose analytical and controlled. "
-        f"It states a claim, explains why the claim matters, and avoids drifting into generic summary. "
-        f"The style remains readable while still carrying argumentative weight."
+        f"{issue_title} gives the essay a more accountable claim about {topic}. "
+        f"{mechanism} "
+        f"{evidence} "
     )
+
+
+def _sentence_start(text: str) -> str:
+    if not text:
+        return text
+    fixed = text[0].upper() + text[1:]
+    return fixed.replace(" ai", " AI").replace(" hci", " HCI")
 
 
 def _offline_style_mismatch_passage(topic: str, step_index: int) -> str:
@@ -1565,21 +1596,6 @@ def _offline_writing_fill_options(
                 "preference_summary": preference_summary,
             }
         )
-    if rng.random() < 0.75:
-        options.insert(
-            rng.randrange(0, len(options)),
-            {
-                "option_id": str(uuid.uuid4()),
-                "reason_id": "MATCHED_LATENT_STYLE",
-                "reason": f"Match the user's latent style preference: {target_item}",
-                "explanation": "This option most directly fits the simulated user's hidden writing preference.",
-                "replacement_text": _offline_style_aligned_passage(topic, step_index, target_item),
-                "option_kind": "reason",
-                "category": "writing_fill",
-                "preference_summary": target_item,
-            },
-        )
-        options = options[:10]
     options.append(
         {
             "option_id": str(uuid.uuid4()),
@@ -1599,13 +1615,24 @@ def _offline_choose_writing_fill(
     target_item: str,
     options: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    exact = next((item for item in options if item.get("preference_summary") == target_item), None)
-    if exact is not None:
+    target_tokens = set(_tokenize(target_item))
+    scored_options = []
+    for option in options:
+        if option.get("reason_id") == "OTHER":
+            continue
+        option_text = " ".join(
+            str(option.get(key, ""))
+            for key in ["reason", "explanation", "replacement_text", "preference_summary"]
+        )
+        score = len(target_tokens & set(_tokenize(option_text)))
+        scored_options.append((score, option))
+    best_score, best_option = max(scored_options, key=lambda item: item[0], default=(0, None))
+    if best_option is not None and best_score >= 2:
         return {
             "selected_action": "select_option",
-            "selected_option": exact,
+            "selected_option": best_option,
             "manual_input": "",
-            "rationale": "The simulator selected the writing-fill option that matched its hidden style preference.",
+            "rationale": "The simulator selected the closest offered replacement option for its hidden preference.",
         }
     return {
         "selected_action": "manual_describe",

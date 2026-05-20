@@ -13,15 +13,15 @@ This report keeps the original recovery audit and adds the common, rare personal
 
 | Group | Profiles | Avg recall | Interruptions | Manual actions | Avg elapsed seconds |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| common | `50` | `0.852` | `1469` | `254` | `3596.31` |
-| rare | `50` | `0.850` | `1491` | `358` | `3544.59` |
-| mix | `50` | `0.851` | `1456` | `299` | `3538.54` |
+| common | `50` | `0.380` | `1625` | `114` | `3515.00` |
+| rare | `50` | `0.177` | `1836` | `74` | `3526.07` |
+| mix | `50` | `0.296` | `1703` | `128` | `3576.80` |
 
 ## Overall Recovery
 
-- Average recall: `0.851`
-- Total interruptions: `4416`
-- Manual/custom actions: `911`
+- Average recall: `0.284`
+- Total interruptions: `5164`
+- Manual/custom actions: `316`
 
 ## Profile Size Check
 
@@ -40,22 +40,22 @@ This report keeps the original recovery audit and adds the common, rare personal
 - Exact stopping time: `104.46` seconds
 - Repair or simulator decision: The selected feedback indicates this reusable writing preference: Avoid generic academic filler.
 
-Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>The passage keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The style remains readable while still carrying argumentative weight.</mark>
+Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Patient autonomy gives the essay a more accountable claim about bioethics. Clinical authority shapes which choices appear reasonable to patients before consent is formally requested. Hospital ethics cases show that formal choice can coexist with pressure, confusion, and unequal access to advocacy.</mark>
 
 ### Rare Profile Sample
 
 - User: `fake_rare_001`
 - Step: `1`
-- Exact stopping time: `47.18` seconds
-- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Allow a warmer tone when describing vulnerable people affected by the issue.
+- Exact stopping time: `102.54` seconds
+- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Support abstract points with concrete examples when needed.
 
-Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>The revision keeps the analysis of bioethics grounded in people who must live with its consequences. It names harm without turning suffering into decoration, and it lets the human stake clarify why the argument matters. The tone becomes warmer while still remaining evidence-minded.</mark>
+Bioethics is a broad field that deals with medicine, technology, public health, and social values. Many issues in the field are important because they affect patients, professionals, and society. The main point is that new medical capacities create many complicated questions that require careful discussion. <mark>Patient autonomy shows the tradeoff in concrete terms. Clinical authority shapes which choices appear reasonable to patients before consent is formally requested. The same arrangement can improve consistency while narrowing judgment in borderline cases, so the example carries the argument rather than merely illustrating it.</mark>
 
 ### Mix Profile Sample
 
 - User: `fake_mix_001`
-- Step: `2`
-- Exact stopping time: `158.59` seconds
-- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Avoid overusing 'important' and replace it with the exact reason something matters.
+- Step: `1`
+- Exact stopping time: `102.63` seconds
+- Repair or simulator decision: The selected feedback indicates this reusable writing preference: Use more specific wording instead of broad or generic phrasing.
 
-Another major issue in human-computer interaction is automation. It matters because it affects people, institutions, and future research. The draft sounds relevant, but it relies on broad claims instead of showing how the argument works. <mark>The passage keeps the prose analytical and controlled. It states a claim, explains why the claim matters, and avoids drifting into generic summary. The style remains readable while still carrying argumentative weight.</mark>
+Human-computer interaction includes an important debate about usability. Many scholars have different views, and the issue has broad implications for theory and practice. The paragraph names the controversy but does not yet explain the mechanism, evidence, or counterargument. <mark>Usability should be judged through concrete evidence rather than broad claims about impact. User studies, task completion data, and error logs show where design intentions break down. That detail makes the claim testable because it names the mechanism, the affected setting, and the limit on what can be concluded.</mark>

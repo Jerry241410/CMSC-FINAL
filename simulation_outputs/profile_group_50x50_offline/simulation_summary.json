@@ -1,10 +1,10 @@
 {
-  "average_overlap_word_count": 92.04666666666667,
+  "average_overlap_word_count": 29.993333333333332,
   "average_target_word_count": 108.70666666666666,
-  "average_recall_ratio": 0.8511365559092738,
-  "manual_action_count": 911,
-  "interruption_count": 4416,
-  "average_elapsed_seconds": 3559.812512684632,
+  "average_recall_ratio": 0.2842587374343339,
+  "manual_action_count": 316,
+  "interruption_count": 5164,
+  "average_elapsed_seconds": 3539.286361462126,
   "recovery_timeline": [
     {
       "step_index": 1,
@@ -18,253 +18,253 @@
     },
     {
       "step_index": 3,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.0006060606060606061,
       "sample_count": 150
     },
     {
       "step_index": 4,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.0019678539391093284,
       "sample_count": 150
     },
     {
       "step_index": 5,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.00518586961043257,
       "sample_count": 150
     },
     {
       "step_index": 6,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.007010340400563755,
       "sample_count": 150
     },
     {
       "step_index": 7,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.011991927966982518,
       "sample_count": 150
     },
     {
       "step_index": 8,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.019138052406227388,
       "sample_count": 150
     },
     {
       "step_index": 9,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.024111041701191865,
       "sample_count": 150
     },
     {
       "step_index": 10,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.03247172012570294,
       "sample_count": 150
     },
     {
       "step_index": 11,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.04064654890840733,
       "sample_count": 150
     },
     {
       "step_index": 12,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.04964684291263582,
       "sample_count": 150
     },
     {
       "step_index": 13,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.061466565965083465,
       "sample_count": 150
     },
     {
       "step_index": 14,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.07313380802871922,
       "sample_count": 150
     },
     {
       "step_index": 15,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.08073973235277677,
       "sample_count": 150
     },
     {
       "step_index": 16,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.09009221877186818,
       "sample_count": 150
     },
     {
       "step_index": 17,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.09870071311730232,
       "sample_count": 150
     },
     {
       "step_index": 18,
-      "average_recall_ratio": 0.0,
+      "average_recall_ratio": 0.10339607702434478,
       "sample_count": 150
     },
     {
       "step_index": 19,
-      "average_recall_ratio": 0.02008268739783543,
+      "average_recall_ratio": 0.11394184794538563,
       "sample_count": 150
     },
     {
       "step_index": 20,
-      "average_recall_ratio": 0.040359343612547664,
+      "average_recall_ratio": 0.12048234954708292,
       "sample_count": 150
     },
     {
       "step_index": 21,
-      "average_recall_ratio": 0.08014806074261344,
+      "average_recall_ratio": 0.13039444415651194,
       "sample_count": 150
     },
     {
       "step_index": 22,
-      "average_recall_ratio": 0.11100466267793745,
+      "average_recall_ratio": 0.14050139397905467,
       "sample_count": 150
     },
     {
       "step_index": 23,
-      "average_recall_ratio": 0.16880184791582217,
+      "average_recall_ratio": 0.1493945245444784,
       "sample_count": 150
     },
     {
       "step_index": 24,
-      "average_recall_ratio": 0.22082582178602214,
+      "average_recall_ratio": 0.15748742346590439,
       "sample_count": 150
     },
     {
       "step_index": 25,
-      "average_recall_ratio": 0.27204201563931013,
+      "average_recall_ratio": 0.16788282500029386,
       "sample_count": 150
     },
     {
       "step_index": 26,
-      "average_recall_ratio": 0.3296691287612505,
+      "average_recall_ratio": 0.17767466280395175,
       "sample_count": 150
     },
     {
       "step_index": 27,
-      "average_recall_ratio": 0.38141316286051063,
+      "average_recall_ratio": 0.1868611067455602,
       "sample_count": 150
     },
     {
       "step_index": 28,
-      "average_recall_ratio": 0.4272103894957427,
+      "average_recall_ratio": 0.19316779559237085,
       "sample_count": 150
     },
     {
       "step_index": 29,
-      "average_recall_ratio": 0.47073394022149256,
+      "average_recall_ratio": 0.20056452682218937,
       "sample_count": 150
     },
     {
       "step_index": 30,
-      "average_recall_ratio": 0.5044731036509138,
+      "average_recall_ratio": 0.2072997154420586,
       "sample_count": 150
     },
     {
       "step_index": 31,
-      "average_recall_ratio": 0.538596634224279,
+      "average_recall_ratio": 0.21317384583909577,
       "sample_count": 150
     },
     {
       "step_index": 32,
-      "average_recall_ratio": 0.5708404538225756,
+      "average_recall_ratio": 0.21885744613098745,
       "sample_count": 150
     },
     {
       "step_index": 33,
-      "average_recall_ratio": 0.5987396335495226,
+      "average_recall_ratio": 0.22490102854435046,
       "sample_count": 150
     },
     {
       "step_index": 34,
-      "average_recall_ratio": 0.6248816106114473,
+      "average_recall_ratio": 0.2317581173169453,
       "sample_count": 150
     },
     {
       "step_index": 35,
-      "average_recall_ratio": 0.6527064966594984,
+      "average_recall_ratio": 0.23557420891302036,
       "sample_count": 150
     },
     {
       "step_index": 36,
-      "average_recall_ratio": 0.675587114265393,
+      "average_recall_ratio": 0.23918408866617363,
       "sample_count": 150
     },
     {
       "step_index": 37,
-      "average_recall_ratio": 0.6894947218722055,
+      "average_recall_ratio": 0.24221222177776222,
       "sample_count": 150
     },
     {
       "step_index": 38,
-      "average_recall_ratio": 0.7086153841356183,
+      "average_recall_ratio": 0.24525498937846957,
       "sample_count": 150
     },
     {
       "step_index": 39,
-      "average_recall_ratio": 0.7232119275885129,
+      "average_recall_ratio": 0.24905503598826725,
       "sample_count": 150
     },
     {
       "step_index": 40,
-      "average_recall_ratio": 0.7388775623293636,
+      "average_recall_ratio": 0.2565682619517706,
       "sample_count": 150
     },
     {
       "step_index": 41,
-      "average_recall_ratio": 0.7536205618877118,
+      "average_recall_ratio": 0.2611159223377427,
       "sample_count": 150
     },
     {
       "step_index": 42,
-      "average_recall_ratio": 0.7695708967700515,
+      "average_recall_ratio": 0.2638617502742237,
       "sample_count": 150
     },
     {
       "step_index": 43,
-      "average_recall_ratio": 0.7831349765675932,
+      "average_recall_ratio": 0.269111827847975,
       "sample_count": 150
     },
     {
       "step_index": 44,
-      "average_recall_ratio": 0.7930099403234474,
+      "average_recall_ratio": 0.27096227866879913,
       "sample_count": 150
     },
     {
       "step_index": 45,
-      "average_recall_ratio": 0.8043587906860175,
+      "average_recall_ratio": 0.2735974510502504,
       "sample_count": 150
     },
     {
       "step_index": 46,
-      "average_recall_ratio": 0.8144488919596592,
+      "average_recall_ratio": 0.2749005384211344,
       "sample_count": 150
     },
     {
       "step_index": 47,
-      "average_recall_ratio": 0.8255334464679879,
+      "average_recall_ratio": 0.27786363180127804,
       "sample_count": 150
     },
     {
       "step_index": 48,
-      "average_recall_ratio": 0.8347067452013804,
+      "average_recall_ratio": 0.2808684948902314,
       "sample_count": 150
     },
     {
       "step_index": 49,
-      "average_recall_ratio": 0.8436187195416815,
+      "average_recall_ratio": 0.2818631371061103,
       "sample_count": 150
     },
     {
       "step_index": 50,
-      "average_recall_ratio": 0.8511365559092738,
+      "average_recall_ratio": 0.2842587374343339,
       "sample_count": 150
     }
   ],
   "group_summaries": {
     "common": {
-      "average_overlap_word_count": 87.14,
+      "average_overlap_word_count": 38.36,
       "average_target_word_count": 102.66,
-      "average_recall_ratio": 0.8524869442009978,
-      "manual_action_count": 254,
-      "interruption_count": 1469,
-      "average_elapsed_seconds": 3596.312747545329,
+      "average_recall_ratio": 0.38005492817642705,
+      "manual_action_count": 114,
+      "interruption_count": 1625,
+      "average_elapsed_seconds": 3514.99675108925,
       "recovery_timeline": [
         {
           "step_index": 1,
@@ -283,248 +283,248 @@
         },
         {
           "step_index": 4,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.00295807314897413,
           "sample_count": 50
         },
         {
           "step_index": 5,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.007081308065533822,
           "sample_count": 50
         },
         {
           "step_index": 6,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.00863470612378625,
           "sample_count": 50
         },
         {
           "step_index": 7,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.014987228107376193,
           "sample_count": 50
         },
         {
           "step_index": 8,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.02918493709702284,
           "sample_count": 50
         },
         {
           "step_index": 9,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.03872725494162251,
           "sample_count": 50
         },
         {
           "step_index": 10,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.048728340330662624,
           "sample_count": 50
         },
         {
           "step_index": 11,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.06035947760743404,
           "sample_count": 50
         },
         {
           "step_index": 12,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.07086631590188296,
           "sample_count": 50
         },
         {
           "step_index": 13,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.09174901249954522,
           "sample_count": 50
         },
         {
           "step_index": 14,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.10788919542867212,
           "sample_count": 50
         },
         {
           "step_index": 15,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.1181466651552801,
           "sample_count": 50
         },
         {
           "step_index": 16,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.13792139316588486,
           "sample_count": 50
         },
         {
           "step_index": 17,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.1475943886498669,
           "sample_count": 50
         },
         {
           "step_index": 18,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.1492071791443628,
           "sample_count": 50
         },
         {
           "step_index": 19,
-          "average_recall_ratio": 0.014148966688787285,
+          "average_recall_ratio": 0.16341057664038874,
           "sample_count": 50
         },
         {
           "step_index": 20,
-          "average_recall_ratio": 0.027892342225526785,
+          "average_recall_ratio": 0.16620724275407725,
           "sample_count": 50
         },
         {
           "step_index": 21,
-          "average_recall_ratio": 0.06917980335372531,
+          "average_recall_ratio": 0.17966087902022795,
           "sample_count": 50
         },
         {
           "step_index": 22,
-          "average_recall_ratio": 0.09350069896535614,
+          "average_recall_ratio": 0.18984032737989423,
           "sample_count": 50
         },
         {
           "step_index": 23,
-          "average_recall_ratio": 0.15637577147188408,
+          "average_recall_ratio": 0.19758805968759038,
           "sample_count": 50
         },
         {
           "step_index": 24,
-          "average_recall_ratio": 0.21583370619279588,
+          "average_recall_ratio": 0.21195289504402998,
           "sample_count": 50
         },
         {
           "step_index": 25,
-          "average_recall_ratio": 0.26783229433700184,
+          "average_recall_ratio": 0.22689588917738532,
           "sample_count": 50
         },
         {
           "step_index": 26,
-          "average_recall_ratio": 0.3293881547670602,
+          "average_recall_ratio": 0.23814007038962182,
           "sample_count": 50
         },
         {
           "step_index": 27,
-          "average_recall_ratio": 0.3732395153111881,
+          "average_recall_ratio": 0.2515151420864545,
           "sample_count": 50
         },
         {
           "step_index": 28,
-          "average_recall_ratio": 0.424625274281786,
+          "average_recall_ratio": 0.25763757627108963,
           "sample_count": 50
         },
         {
           "step_index": 29,
-          "average_recall_ratio": 0.4698525898406311,
+          "average_recall_ratio": 0.2671893794434484,
           "sample_count": 50
         },
         {
           "step_index": 30,
-          "average_recall_ratio": 0.49342017612060846,
+          "average_recall_ratio": 0.27867310656019545,
           "sample_count": 50
         },
         {
           "step_index": 31,
-          "average_recall_ratio": 0.5303761194139429,
+          "average_recall_ratio": 0.29037990698698807,
           "sample_count": 50
         },
         {
           "step_index": 32,
-          "average_recall_ratio": 0.5561617721342548,
+          "average_recall_ratio": 0.2996449328926319,
           "sample_count": 50
         },
         {
           "step_index": 33,
-          "average_recall_ratio": 0.5804670181572296,
+          "average_recall_ratio": 0.3076636968469759,
           "sample_count": 50
         },
         {
           "step_index": 34,
-          "average_recall_ratio": 0.6072397305061766,
+          "average_recall_ratio": 0.31488325297666314,
           "sample_count": 50
         },
         {
           "step_index": 35,
-          "average_recall_ratio": 0.6325027353660663,
+          "average_recall_ratio": 0.3192292665253864,
           "sample_count": 50
         },
         {
           "step_index": 36,
-          "average_recall_ratio": 0.6514315342375945,
+          "average_recall_ratio": 0.32097160974366545,
           "sample_count": 50
         },
         {
           "step_index": 37,
-          "average_recall_ratio": 0.6688157183248253,
+          "average_recall_ratio": 0.3240420898253815,
           "sample_count": 50
         },
         {
           "step_index": 38,
-          "average_recall_ratio": 0.690545490885262,
+          "average_recall_ratio": 0.3289426893206484,
           "sample_count": 50
         },
         {
           "step_index": 39,
-          "average_recall_ratio": 0.7027928775052851,
+          "average_recall_ratio": 0.33323297097809823,
           "sample_count": 50
         },
         {
           "step_index": 40,
-          "average_recall_ratio": 0.7272030787673601,
+          "average_recall_ratio": 0.34602079628811117,
           "sample_count": 50
         },
         {
           "step_index": 41,
-          "average_recall_ratio": 0.7404910316631712,
+          "average_recall_ratio": 0.3527095398299286,
           "sample_count": 50
         },
         {
           "step_index": 42,
-          "average_recall_ratio": 0.7605305323330768,
+          "average_recall_ratio": 0.35536574533510956,
           "sample_count": 50
         },
         {
           "step_index": 43,
-          "average_recall_ratio": 0.7785981849505353,
+          "average_recall_ratio": 0.36216177631340735,
           "sample_count": 50
         },
         {
           "step_index": 44,
-          "average_recall_ratio": 0.7868741762550202,
+          "average_recall_ratio": 0.3664824740139752,
           "sample_count": 50
         },
         {
           "step_index": 45,
-          "average_recall_ratio": 0.7956592999430496,
+          "average_recall_ratio": 0.3680209355524367,
           "sample_count": 50
         },
         {
           "step_index": 46,
-          "average_recall_ratio": 0.8054285006354435,
+          "average_recall_ratio": 0.3680209355524367,
           "sample_count": 50
         },
         {
           "step_index": 47,
-          "average_recall_ratio": 0.8158863421752868,
+          "average_recall_ratio": 0.3722701219987944,
           "sample_count": 50
         },
         {
           "step_index": 48,
-          "average_recall_ratio": 0.829750527289365,
+          "average_recall_ratio": 0.3747262623496716,
           "sample_count": 50
         },
         {
           "step_index": 49,
-          "average_recall_ratio": 0.8384530756373575,
+          "average_recall_ratio": 0.37675829896294394,
           "sample_count": 50
         },
         {
           "step_index": 50,
-          "average_recall_ratio": 0.8524869442009978,
+          "average_recall_ratio": 0.38005492817642705,
           "sample_count": 50
         }
       ]
     },
     "mix": {
-      "average_overlap_word_count": 87.88,
+      "average_overlap_word_count": 30.58,
       "average_target_word_count": 104.04,
-      "average_recall_ratio": 0.8506649412389349,
-      "manual_action_count": 299,
-      "interruption_count": 1456,
-      "average_elapsed_seconds": 3538.5372154084985,
+      "average_recall_ratio": 0.2960727395785146,
+      "manual_action_count": 128,
+      "interruption_count": 1703,
+      "average_elapsed_seconds": 3576.7954220114443,
       "recovery_timeline": [
         {
           "step_index": 1,
@@ -538,253 +538,253 @@
         },
         {
           "step_index": 3,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.0018181818181818182,
           "sample_count": 50
         },
         {
           "step_index": 4,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.0018181818181818182,
           "sample_count": 50
         },
         {
           "step_index": 5,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.00658454947114741,
           "sample_count": 50
         },
         {
           "step_index": 6,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.00933992345907374,
           "sample_count": 50
         },
         {
           "step_index": 7,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.014786757447282448,
           "sample_count": 50
         },
         {
           "step_index": 8,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.018727863893010056,
           "sample_count": 50
         },
         {
           "step_index": 9,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.021880163639711868,
           "sample_count": 50
         },
         {
           "step_index": 10,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.028912644103980565,
           "sample_count": 50
         },
         {
           "step_index": 11,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.03569975809080903,
           "sample_count": 50
         },
         {
           "step_index": 12,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.04371709670944792,
           "sample_count": 50
         },
         {
           "step_index": 13,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.05061376751208048,
           "sample_count": 50
         },
         {
           "step_index": 14,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.06069597442595513,
           "sample_count": 50
         },
         {
           "step_index": 15,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.06859036131415007,
           "sample_count": 50
         },
         {
           "step_index": 16,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.07348346551634517,
           "sample_count": 50
         },
         {
           "step_index": 17,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.08260612489083981,
           "sample_count": 50
         },
         {
           "step_index": 18,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.08921790391074787,
           "sample_count": 50
         },
         {
           "step_index": 19,
-          "average_recall_ratio": 0.02189892480010494,
+          "average_recall_ratio": 0.09909609414260849,
           "sample_count": 50
         },
         {
           "step_index": 20,
-          "average_recall_ratio": 0.04967267050487344,
+          "average_recall_ratio": 0.1090259786995111,
           "sample_count": 50
         },
         {
           "step_index": 21,
-          "average_recall_ratio": 0.09572928312955835,
+          "average_recall_ratio": 0.1172255650573546,
           "sample_count": 50
         },
         {
           "step_index": 22,
-          "average_recall_ratio": 0.13636772297325506,
+          "average_recall_ratio": 0.13238122602543886,
           "sample_count": 50
         },
         {
           "step_index": 23,
-          "average_recall_ratio": 0.19528450813130402,
+          "average_recall_ratio": 0.14400208908051246,
           "sample_count": 50
         },
         {
           "step_index": 24,
-          "average_recall_ratio": 0.24474170690853264,
+          "average_recall_ratio": 0.1530074900167835,
           "sample_count": 50
         },
         {
           "step_index": 25,
-          "average_recall_ratio": 0.29157447906660083,
+          "average_recall_ratio": 0.1656462802178824,
           "sample_count": 50
         },
         {
           "step_index": 26,
-          "average_recall_ratio": 0.34890124018490964,
+          "average_recall_ratio": 0.17672891870677776,
           "sample_count": 50
         },
         {
           "step_index": 27,
-          "average_recall_ratio": 0.4088817314056958,
+          "average_recall_ratio": 0.1882776151473401,
           "sample_count": 50
         },
         {
           "step_index": 28,
-          "average_recall_ratio": 0.4604875137004196,
+          "average_recall_ratio": 0.19604676100334173,
           "sample_count": 50
         },
         {
           "step_index": 29,
-          "average_recall_ratio": 0.5093755227185663,
+          "average_recall_ratio": 0.20592861755953568,
           "sample_count": 50
         },
         {
           "step_index": 30,
-          "average_recall_ratio": 0.5473112324955555,
+          "average_recall_ratio": 0.21165561493850327,
           "sample_count": 50
         },
         {
           "step_index": 31,
-          "average_recall_ratio": 0.5702814650413159,
+          "average_recall_ratio": 0.21587483997704462,
           "sample_count": 50
         },
         {
           "step_index": 32,
-          "average_recall_ratio": 0.5985697330410062,
+          "average_recall_ratio": 0.2195416533796195,
           "sample_count": 50
         },
         {
           "step_index": 33,
-          "average_recall_ratio": 0.6300195312838802,
+          "average_recall_ratio": 0.22617848078453492,
           "sample_count": 50
         },
         {
           "step_index": 34,
-          "average_recall_ratio": 0.6577323371773484,
+          "average_recall_ratio": 0.235677831680016,
           "sample_count": 50
         },
         {
           "step_index": 35,
-          "average_recall_ratio": 0.6860831816934391,
+          "average_recall_ratio": 0.24179185762540026,
           "sample_count": 50
         },
         {
           "step_index": 36,
-          "average_recall_ratio": 0.7099812138113845,
+          "average_recall_ratio": 0.2466788184716482,
           "sample_count": 50
         },
         {
           "step_index": 37,
-          "average_recall_ratio": 0.7232273931615619,
+          "average_recall_ratio": 0.25125866455149426,
           "sample_count": 50
         },
         {
           "step_index": 38,
-          "average_recall_ratio": 0.7332823646990434,
+          "average_recall_ratio": 0.25446381146737196,
           "sample_count": 50
         },
         {
           "step_index": 39,
-          "average_recall_ratio": 0.7394046094267926,
+          "average_recall_ratio": 0.2587379933400162,
           "sample_count": 50
         },
         {
           "step_index": 40,
-          "average_recall_ratio": 0.747803098966149,
+          "average_recall_ratio": 0.26239489199691485,
           "sample_count": 50
         },
         {
           "step_index": 41,
-          "average_recall_ratio": 0.7592914286041897,
+          "average_recall_ratio": 0.2690634153272996,
           "sample_count": 50
         },
         {
           "step_index": 42,
-          "average_recall_ratio": 0.7711201072586087,
+          "average_recall_ratio": 0.27206491278162726,
           "sample_count": 50
         },
         {
           "step_index": 43,
-          "average_recall_ratio": 0.785819260079472,
+          "average_recall_ratio": 0.27765917868521517,
           "sample_count": 50
         },
         {
           "step_index": 44,
-          "average_recall_ratio": 0.7978168018707921,
+          "average_recall_ratio": 0.27765917868521517,
           "sample_count": 50
         },
         {
           "step_index": 45,
-          "average_recall_ratio": 0.8139412083161277,
+          "average_recall_ratio": 0.28071432751400816,
           "sample_count": 50
         },
         {
           "step_index": 46,
-          "average_recall_ratio": 0.8266881891780532,
+          "average_recall_ratio": 0.28401752902059946,
           "sample_count": 50
         },
         {
           "step_index": 47,
-          "average_recall_ratio": 0.8403517121449683,
+          "average_recall_ratio": 0.28698060408113213,
           "sample_count": 50
         },
         {
           "step_index": 48,
-          "average_recall_ratio": 0.8403517121449683,
+          "average_recall_ratio": 0.29215224640041354,
           "sample_count": 50
         },
         {
           "step_index": 49,
-          "average_recall_ratio": 0.8486030855688318,
+          "average_recall_ratio": 0.29277080310144443,
           "sample_count": 50
         },
         {
           "step_index": 50,
-          "average_recall_ratio": 0.8506649412389349,
+          "average_recall_ratio": 0.2960727395785146,
           "sample_count": 50
         }
       ]
     },
     "rare": {
-      "average_overlap_word_count": 101.12,
+      "average_overlap_word_count": 21.04,
       "average_target_word_count": 119.42,
-      "average_recall_ratio": 0.8502577822878886,
-      "manual_action_count": 358,
-      "interruption_count": 1491,
-      "average_elapsed_seconds": 3544.5875751000694,
+      "average_recall_ratio": 0.1766485445480601,
+      "manual_action_count": 74,
+      "interruption_count": 1836,
+      "average_elapsed_seconds": 3526.0669112856835,
       "recovery_timeline": [
         {
           "step_index": 1,
@@ -803,237 +803,237 @@
         },
         {
           "step_index": 4,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.0011273068501720363,
           "sample_count": 50
         },
         {
           "step_index": 5,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.0018917512946164808,
           "sample_count": 50
         },
         {
           "step_index": 6,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.0030563916188312734,
           "sample_count": 50
         },
         {
           "step_index": 7,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.006201798346288916,
           "sample_count": 50
         },
         {
           "step_index": 8,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.009501356228649276,
           "sample_count": 50
         },
         {
           "step_index": 9,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.011725706522241218,
           "sample_count": 50
         },
         {
           "step_index": 10,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.01977417594246562,
           "sample_count": 50
         },
         {
           "step_index": 11,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.025880411026978925,
           "sample_count": 50
         },
         {
           "step_index": 12,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.03435711612657657,
           "sample_count": 50
         },
         {
           "step_index": 13,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.04203691788362471,
           "sample_count": 50
         },
         {
           "step_index": 14,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.050816254231530404,
           "sample_count": 50
         },
         {
           "step_index": 15,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.05548217058890017,
           "sample_count": 50
         },
         {
           "step_index": 16,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.058871797633374495,
           "sample_count": 50
         },
         {
           "step_index": 17,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.06590162581120022,
           "sample_count": 50
         },
         {
           "step_index": 18,
-          "average_recall_ratio": 0.0,
+          "average_recall_ratio": 0.07176314801792366,
           "sample_count": 50
         },
         {
           "step_index": 19,
-          "average_recall_ratio": 0.02420017070461406,
+          "average_recall_ratio": 0.07931887305315967,
           "sample_count": 50
         },
         {
           "step_index": 20,
-          "average_recall_ratio": 0.04351301810724277,
+          "average_recall_ratio": 0.08621382718766042,
           "sample_count": 50
         },
         {
           "step_index": 21,
-          "average_recall_ratio": 0.07553509574455665,
+          "average_recall_ratio": 0.09429688839195331,
           "sample_count": 50
         },
         {
           "step_index": 22,
-          "average_recall_ratio": 0.10314556609520115,
+          "average_recall_ratio": 0.09928262853183087,
           "sample_count": 50
         },
         {
           "step_index": 23,
-          "average_recall_ratio": 0.15474526414427842,
+          "average_recall_ratio": 0.10659342486533237,
           "sample_count": 50
         },
         {
           "step_index": 24,
-          "average_recall_ratio": 0.2019020522567379,
+          "average_recall_ratio": 0.10750188533689965,
           "sample_count": 50
         },
         {
           "step_index": 25,
-          "average_recall_ratio": 0.25671927351432766,
+          "average_recall_ratio": 0.11110630560561387,
           "sample_count": 50
         },
         {
           "step_index": 26,
-          "average_recall_ratio": 0.3107179913317815,
+          "average_recall_ratio": 0.11815499931545563,
           "sample_count": 50
         },
         {
           "step_index": 27,
-          "average_recall_ratio": 0.3621182418646481,
+          "average_recall_ratio": 0.12079056300288599,
           "sample_count": 50
         },
         {
           "step_index": 28,
-          "average_recall_ratio": 0.3965183805050224,
+          "average_recall_ratio": 0.1258190495026812,
           "sample_count": 50
         },
         {
           "step_index": 29,
-          "average_recall_ratio": 0.4329737081052803,
+          "average_recall_ratio": 0.12857558346358403,
           "sample_count": 50
         },
         {
           "step_index": 30,
-          "average_recall_ratio": 0.4726879023365776,
+          "average_recall_ratio": 0.13157042482747708,
           "sample_count": 50
         },
         {
           "step_index": 31,
-          "average_recall_ratio": 0.5151323182175781,
+          "average_recall_ratio": 0.13326679055325458,
           "sample_count": 50
         },
         {
           "step_index": 32,
-          "average_recall_ratio": 0.557789856292466,
+          "average_recall_ratio": 0.13738575212071097,
           "sample_count": 50
         },
         {
           "step_index": 33,
-          "average_recall_ratio": 0.5857323512074581,
+          "average_recall_ratio": 0.14086090800154047,
           "sample_count": 50
         },
         {
           "step_index": 34,
-          "average_recall_ratio": 0.609672764150817,
+          "average_recall_ratio": 0.14471326729415673,
           "sample_count": 50
         },
         {
           "step_index": 35,
-          "average_recall_ratio": 0.6395335729189899,
+          "average_recall_ratio": 0.14570150258827438,
           "sample_count": 50
         },
         {
           "step_index": 36,
-          "average_recall_ratio": 0.6653485947472001,
+          "average_recall_ratio": 0.14990183778320731,
           "sample_count": 50
         },
         {
           "step_index": 37,
-          "average_recall_ratio": 0.6764410541302291,
+          "average_recall_ratio": 0.1513359109564109,
           "sample_count": 50
         },
         {
           "step_index": 38,
-          "average_recall_ratio": 0.7020182968225496,
+          "average_recall_ratio": 0.15235846734738837,
           "sample_count": 50
         },
         {
           "step_index": 39,
-          "average_recall_ratio": 0.7274382958334609,
+          "average_recall_ratio": 0.15519414364668743,
           "sample_count": 50
         },
         {
           "step_index": 40,
-          "average_recall_ratio": 0.7416265092545816,
+          "average_recall_ratio": 0.16128909757028587,
           "sample_count": 50
         },
         {
           "step_index": 41,
-          "average_recall_ratio": 0.7610792253957741,
+          "average_recall_ratio": 0.16157481185600017,
           "sample_count": 50
         },
         {
           "step_index": 42,
-          "average_recall_ratio": 0.7770620507184689,
+          "average_recall_ratio": 0.16415459270593424,
           "sample_count": 50
         },
         {
           "step_index": 43,
-          "average_recall_ratio": 0.7849874846727724,
+          "average_recall_ratio": 0.16751452854530238,
           "sample_count": 50
         },
         {
           "step_index": 44,
-          "average_recall_ratio": 0.79433884284453,
+          "average_recall_ratio": 0.16874518330720714,
           "sample_count": 50
         },
         {
           "step_index": 45,
-          "average_recall_ratio": 0.8034758637988751,
+          "average_recall_ratio": 0.17205709008430645,
           "sample_count": 50
         },
         {
           "step_index": 46,
-          "average_recall_ratio": 0.8112299860654809,
+          "average_recall_ratio": 0.17266315069036708,
           "sample_count": 50
         },
         {
           "step_index": 47,
-          "average_recall_ratio": 0.8203622850837087,
+          "average_recall_ratio": 0.17434016932390745,
           "sample_count": 50
         },
         {
           "step_index": 48,
-          "average_recall_ratio": 0.834017996169808,
+          "average_recall_ratio": 0.1757269759206091,
           "sample_count": 50
         },
         {
           "step_index": 49,
-          "average_recall_ratio": 0.8437999974188553,
+          "average_recall_ratio": 0.17606030925394245,
           "sample_count": 50
         },
         {
           "step_index": 50,
-          "average_recall_ratio": 0.8502577822878886,
+          "average_recall_ratio": 0.1766485445480601,
           "sample_count": 50
         }
       ]
